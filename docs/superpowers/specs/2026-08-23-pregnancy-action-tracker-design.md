@@ -19,13 +19,19 @@ dashboard. Built to eventually ship on the App Store.
 - Show a dashboard of logged events, filterable by time range (day / month /
   full pregnancy) and by action type
 - Keep all data on-device — no accounts, no backend, no data leaves the phone
+  unless the user explicitly exports it
+- Let the user manually export all their data to a single backup file (and
+  import it back), since on-device-only storage has no automatic safety net
+  against a lost/reset phone or a reinstall
 - Buildable and testable entirely from a Windows machine, with no Mac
   required at any point (including final App Store submission)
 - New-to-mobile-dev friendly: minimal moving parts, small dependency surface
 
 ## Non-goals (for this MVP)
 
-- Cloud sync / multi-device support
+- Cloud sync / automatic backup — export/import is a manual, user-triggered
+  action, not a background sync
+- Multi-device support
 - Sharing data with a partner or provider
 - Live-running stopwatch UI for duration events (start now, come back later
   to stop) — first version uses a single form where both start and end are
@@ -88,6 +94,12 @@ directory.
 - `ActionEvent.endDate` — required when the referenced action type has
   `hasDuration == true`; must be `>= startDate`
 - `Settings.dueDate` — required, must be a valid `Date`
+- **Import file** — must be valid JSON with the expected top-level shape
+  (`actionTypes: ActionType[]`, `events: ActionEvent[]`, `settings:
+  Settings`); every entry within it is re-validated against the rules
+  above. If the file is malformed or any entry fails validation, the import
+  is rejected in full (no partial import) and the user's existing data is
+  left untouched — an error message explains what failed.
 
 Validation runs inside each Store's create/update methods and throws a
 specific validation error; the UI surfaces failures as inline field errors
@@ -106,11 +118,28 @@ Three-tab layout (Expo Router tab navigator):
    - "+" button opens the log-event form
 2. **Actions** — manage action type definitions: list existing types
    (including the two defaults), add new, edit, delete.
-3. **Settings** — set/edit due date.
+3. **Settings** — set/edit due date; **Export Data** and **Import Data**
+   actions (see below).
 
 **Log Event form:** pick an action type, set start time (default: now,
 editable), and — only if the chosen action type has a duration — also set
 an end time (default: now, editable). Validation runs before save.
+
+## Backup & Restore
+
+- **Export**: combines the current contents of all three stores
+  (`actionTypes`, `events`, `settings`) into one JSON file, then opens the
+  native OS share sheet (`expo-sharing`) so the user can save it to Files,
+  iCloud Drive, email it to themselves, AirDrop it, etc. Fully manual,
+  on-demand — no scheduled or background export.
+- **Import**: opens a document picker for the user to select a previously
+  exported JSON file. The file is validated (see Validation Rules below)
+  before anything changes. On success, the user is shown a confirmation
+  ("This replaces all current data on this device") before the import
+  overwrites all three stores — kept as a full replace rather than a merge,
+  since import is expected to happen right after a fresh install onto an
+  empty app, and a merge would add complexity (duplicate/ID-conflict
+  handling) with little real benefit here.
 
 ## Data Flow & Persistence
 
@@ -147,27 +176,45 @@ an end time (default: now, editable). Validation runs before save.
 - Jest unit tests for the dashboard's date-filtering logic (day / month /
   full pregnancy grouping, and pregnancy-week calculation from due date) —
   the trickiest pure logic in the app, worth covering directly.
+- Jest unit tests for export (produces the expected combined JSON) and
+  import (accepts a valid file, rejects a malformed one without touching
+  existing data, replaces all three stores on success).
 - Manual testing via the Expo Go app on a physical iPhone for the full UI
   flows: log an instant event, log a duration event, edit/delete an action
-  type, change due date, apply dashboard filters.
+  type, change due date, apply dashboard filters, export then re-import a
+  backup file.
 
 ## Deployment & Distribution
 
-Entirely Mac-free, start to finish:
+Entirely Mac-free, start to finish. **Not published to the public App
+Store for now** — distributed via TestFlight instead.
 
 - **Local development**: run `npx expo start` on the Windows machine, then
   scan the printed QR code with the Expo Go app (free, from the App Store)
   on a personal iPhone. Live reload, no build step, no Xcode. Expo Go
   supports everything this app needs (no native modules outside Expo's
   managed set).
-- **Standalone builds** (a real installable app, not just an Expo Go
-  preview): use Expo Application Services (EAS) Build, which compiles the
-  iOS binary in Expo's cloud and returns an installable `.ipa` — still
-  requires an Apple Developer Program account ($99/year) for code signing,
-  but no local Mac.
-- **App Store release**: EAS Submit uploads the cloud-built binary straight
-  to App Store Connect from the command line. From there it's the same
-  Apple review process (icon, screenshots, description, privacy policy
-  URL). Because all data stays on-device with no accounts and nothing
-  transmitted off the phone, the App Store privacy questionnaire and review
-  are about as simple as they get for a health-adjacent app.
+- **Production installs on personal phones (chosen approach: TestFlight)**:
+  - Requires an Apple Developer Program account ($99/year) — needed for
+    code signing regardless of distribution method, since there's no Mac
+    available for the free-tier 7-day Xcode install workflow.
+  - Build the iOS binary in the cloud with EAS Build, then upload it to
+    App Store Connect with EAS Submit — both run from the command line on
+    Windows, no Xcode involved.
+  - Add testers (self, family) as internal testers in App Store Connect by
+    email. They install the free TestFlight app once, accept the invite,
+    and get the app through it — no public listing, no App Store review
+    for internal testers.
+  - **Each build expires 90 days after upload.** Before that, re-run the
+    same EAS Build + Submit commands to upload a fresh build, which resets
+    the clock. As long as it's installed as an *update* (not reinstalled
+    from scratch after deletion), local data persists across this —
+    see Backup & Restore above for the safety net if a build lapses and
+    the app gets removed before renewal.
+- **Public App Store release (later, if ever)**: same EAS Submit flow,
+  just targeting a public listing instead of internal TestFlight testers —
+  icon, screenshots, description, privacy policy URL, full Apple review.
+  Because all data stays on-device with no accounts and nothing transmitted
+  off the phone (aside from an explicit user-triggered export), the App
+  Store privacy questionnaire and review are about as simple as they get
+  for a health-adjacent app.

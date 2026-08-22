@@ -56,6 +56,8 @@ dashboard. Built to eventually ship on the App Store.
 - Persistence: plain JSON, read/written via `expo-file-system` to a file in
   the app's document directory — the direct equivalent of the
   Codable-to-JSON-file approach originally spec'd, just in TypeScript
+- Charting: `react-native-gifted-charts` (Expo-compatible, no native
+  code/prebuild required) for the Dashboard's stacked bar chart
 - Testing: Jest for unit tests; manual testing via Expo Go on a physical
   iPhone
 
@@ -109,21 +111,41 @@ Handling).
 
 ## Screens & Navigation
 
-Three-tab layout (Expo Router tab navigator):
+Four-tab layout (Expo Router tab navigator):
 
-1. **Dashboard** (home) — list of logged events, most recent first.
-   - Time-range filter: Day / Month / Full Pregnancy (segmented control)
+1. **Dashboard** (home) — stacked bar chart only, no list. Each bar is a
+   time bucket on the x-axis; its height is the total event count in that
+   bucket; it's visually stacked into one colored segment per action type
+   present in that bucket, with a legend mapping action type → color below
+   the chart.
+   - Time-range filter: Day / Month / Full Pregnancy (segmented control),
+     which also sets the x-axis bucket granularity: Day → hourly bars,
+     Month → daily bars, Full Pregnancy → weekly bars.
+   - Action-type filter: All / specific action type (picker). Filtering to
+     one type shows single-color bars (still using that type's color).
+   - Header shows current pregnancy week, computed from `Settings.dueDate`.
+2. **History** — scrollable list of individual events, most recent first,
+   each row tagged with its action type's color for visual consistency
+   with the Dashboard.
+   - Time-range filter: Day / Week / All (a simple date cutoff on the flat
+     list — no bucketing needed here, unlike the Dashboard)
    - Action-type filter: All / specific action type (picker)
-   - Header shows current pregnancy week, computed from `Settings.dueDate`
    - "+" button opens the log-event form
-2. **Actions** — manage action type definitions: list existing types
+3. **Actions** — manage action type definitions: list existing types
    (including the two defaults), add new, edit, delete.
-3. **Settings** — set/edit due date; **Export Data** and **Import Data**
+4. **Settings** — set/edit due date; **Export Data** and **Import Data**
    actions (see below).
 
 **Log Event form:** pick an action type, set start time (default: now,
 editable), and — only if the chosen action type has a duration — also set
 an end time (default: now, editable). Validation runs before save.
+
+**Color assignment:** each action type is assigned a color deterministically
+from a fixed palette (cycled by the type's position in the `actionTypes`
+list, or a hash of its `id`) — not a stored field on `ActionType`, and no
+color-picker UI. Keeps the data model unchanged while giving consistent,
+distinct colors across the Dashboard chart, its legend, and the History
+list.
 
 ## Backup & Restore
 
@@ -173,9 +195,14 @@ an end time (default: now, editable). Validation runs before save.
 - Jest unit tests per data hook: create/edit/delete, each validation rule
   (empty name, duplicate name, end-before-start, missing due date, etc.),
   and load/save round-trip against a mocked file system.
-- Jest unit tests for the dashboard's date-filtering logic (day / month /
-  full pregnancy grouping, and pregnancy-week calculation from due date) —
-  the trickiest pure logic in the app, worth covering directly.
+- Jest unit tests for the dashboard's bucketing logic (grouping events into
+  hourly/daily/weekly buckets per the Day/Month/Full Pregnancy filter,
+  stacking counts per action type within each bucket) and pregnancy-week
+  calculation from due date — the trickiest pure logic in the app, worth
+  covering directly.
+- Jest unit tests for the History tab's date-range filtering (day / week /
+  all) and color-assignment determinism (same action type always maps to
+  the same color).
 - Jest unit tests for export (produces the expected combined JSON) and
   import (accepts a valid file, rejects a malformed one without touching
   existing data, replaces all three stores on success).

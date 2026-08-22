@@ -48,7 +48,7 @@ dashboard. Built to eventually ship on the App Store.
   live device preview (scan a QR code) during development — no Xcode or
   macOS needed at any stage, including App Store submission (via EAS
   Submit).
-- Navigation: Expo Router, tab-based (maps directly to the three-tab
+- Navigation: Expo Router, tab-based (maps directly to the four-tab
   structure below)
 - State: React Context + small custom hooks per data type — no
   Redux/MobX/etc., the data volume and update patterns here don't warrant
@@ -228,10 +228,16 @@ Store for now** — distributed via TestFlight instead.
   - Build the iOS binary in the cloud with EAS Build, then upload it to
     App Store Connect with EAS Submit — both run from the command line on
     Windows, no Xcode involved.
-  - Add testers (self, family) as internal testers in App Store Connect by
-    email. They install the free TestFlight app once, accept the invite,
-    and get the app through it — no public listing, no App Store review
-    for internal testers.
+  - Add testers by email in App Store Connect's TestFlight tab. They
+    install the free TestFlight app once, accept the invite, and get the
+    app through it — no public App Store listing either way. Two tester
+    types: **Internal Testing** (you, if added as a user on your own Apple
+    Developer team) needs no review at all; **External Testing** (family
+    members and anyone not on your developer account) supports up to
+    10,000 testers by email and needs a one-time, lightweight Beta App
+    Review before the first build goes out (typically faster than a full
+    App Store review; later builds usually skip re-review unless they
+    change significantly).
   - **Each build expires 90 days after upload.** Before that, re-run the
     same EAS Build + Submit commands to upload a fresh build, which resets
     the clock. As long as it's installed as an *update* (not reinstalled

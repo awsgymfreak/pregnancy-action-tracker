@@ -19,8 +19,9 @@ dashboard. Built to eventually ship on the App Store.
 - Show a dashboard of logged events, filterable by time range (day / month /
   full pregnancy) and by action type
 - Keep all data on-device — no accounts, no backend, no data leaves the phone
-- New-to-iOS-dev friendly: minimal moving parts, no frameworks beyond
-  Swift/SwiftUI/Foundation
+- Buildable and testable entirely from a Windows machine, with no Mac
+  required at any point (including final App Store submission)
+- New-to-mobile-dev friendly: minimal moving parts, small dependency surface
 
 ## Non-goals (for this MVP)
 
@@ -35,33 +36,42 @@ dashboard. Built to eventually ship on the App Store.
 
 ## Tech Stack
 
-- SwiftUI, Swift, Foundation only — no SwiftData/CoreData/third-party
-  dependencies
-- Deployment target: iOS 17+ (reasonable modern baseline for a new app in
-  2026; easy to lower later if needed since nothing here requires 17
-  specifically)
-- Persistence: plain `Codable` structs serialized to JSON files in the app's
-  Documents directory via `FileManager`
+- **React Native + Expo (managed workflow), TypeScript** — chosen because
+  the developer is on Windows with no Mac. Expo's cloud build service
+  (EAS Build) produces the iOS binary remotely, and the Expo Go app allows
+  live device preview (scan a QR code) during development — no Xcode or
+  macOS needed at any stage, including App Store submission (via EAS
+  Submit).
+- Navigation: Expo Router, tab-based (maps directly to the three-tab
+  structure below)
+- State: React Context + small custom hooks per data type — no
+  Redux/MobX/etc., the data volume and update patterns here don't warrant
+  it
+- Persistence: plain JSON, read/written via `expo-file-system` to a file in
+  the app's document directory — the direct equivalent of the
+  Codable-to-JSON-file approach originally spec'd, just in TypeScript
+- Testing: Jest for unit tests; manual testing via Expo Go on a physical
+  iPhone
 
 ## Data Model
 
-```swift
-struct ActionType: Codable, Identifiable {
-    let id: UUID
-    var name: String        // required, trimmed non-empty, max 50 chars, unique (case-insensitive)
-    var hasDuration: Bool   // instant tap vs. start/end
-    var isDefault: Bool     // true for the two seeded actions; still editable/deletable
+```typescript
+interface ActionType {
+  id: string;              // uuid
+  name: string;             // required, trimmed non-empty, max 50 chars, unique (case-insensitive)
+  hasDuration: boolean;     // instant tap vs. start/end
+  isDefault: boolean;       // true for the two seeded actions; still editable/deletable
 }
 
-struct ActionEvent: Codable, Identifiable {
-    let id: UUID
-    var actionTypeId: UUID
-    var startDate: Date     // required, defaults to "now" in the UI, user-editable
-    var endDate: Date?      // required if the action's hasDuration == true; must be >= startDate
+interface ActionEvent {
+  id: string;               // uuid
+  actionTypeId: string;
+  startDate: string;        // ISO 8601; required, defaults to "now" in the UI, user-editable
+  endDate: string | null;   // ISO 8601; required if the action's hasDuration == true; must be >= startDate
 }
 
-struct Settings: Codable {
-    var dueDate: Date       // required; used to compute current pregnancy week
+interface Settings {
+  dueDate: string;          // ISO 8601; required; used to compute current pregnancy week
                              // and to bound the "full pregnancy" dashboard filter
 }
 ```
@@ -87,7 +97,7 @@ Handling).
 
 ## Screens & Navigation
 
-Three-tab `TabView`:
+Three-tab layout (Expo Router tab navigator):
 
 1. **Dashboard** (home) — list of logged events, most recent first.
    - Time-range filter: Day / Month / Full Pregnancy (segmented control)
@@ -104,18 +114,19 @@ an end time (default: now, editable). Validation runs before save.
 
 ## Data Flow & Persistence
 
-- `ActionTypeStore`, `EventStore`, `SettingsStore` are `@Observable` classes,
-  one per JSON file.
-- Each Store loads its file once at app launch. If the file doesn't exist
-  yet (first launch), `ActionTypeStore` seeds two default action types:
-  "Baby movement" (`hasDuration = false`) and "Contraction"
-  (`hasDuration = true`).
-- Views read directly from a Store's published array via SwiftUI.
-- Every mutation (create/edit/delete) validates first, updates the
-  in-memory array, then rewrites the entire JSON file to disk synchronously.
-  Data volume here (hundreds of events at most over a pregnancy) makes
-  whole-file rewrites simple and fast enough — no need for incremental
-  writes or a database.
+- Three React Context providers — `ActionTypesProvider`, `EventsProvider`,
+  `SettingsProvider` — one per JSON file, each exposing its data plus
+  create/update/delete functions via a matching hook (`useActionTypes()`,
+  `useEvents()`, `useSettings()`).
+- Each provider loads its file once on app start via `expo-file-system`. If
+  the file doesn't exist yet (first launch), `ActionTypesProvider` seeds two
+  default action types: "Baby movement" (`hasDuration: false`) and
+  "Contraction" (`hasDuration: true`).
+- Components read state via the hooks; no prop drilling.
+- Every mutation (create/edit/delete) validates first, updates the in-memory
+  state, then rewrites the entire JSON file to disk. Data volume here
+  (hundreds of events at most over a pregnancy) makes whole-file rewrites
+  simple and fast enough — no need for incremental writes or a database.
 
 ## Error Handling
 
@@ -130,25 +141,33 @@ an end time (default: now, editable). Validation runs before save.
 
 ## Testing
 
-- Unit tests per Store: create/edit/delete, each validation rule (empty
-  name, duplicate name, end-before-start, missing due date, etc.), and
-  load/save round-trip against a temp directory.
-- Unit tests for the dashboard's date-filtering logic (day / month / full
-  pregnancy grouping, and pregnancy-week calculation from due date) — the
-  trickiest pure logic in the app, worth covering directly.
-- Manual testing in the iOS Simulator for the full UI flows: log an instant
-  event, log a duration event, edit/delete an action type, change due date,
-  apply dashboard filters.
+- Jest unit tests per data hook: create/edit/delete, each validation rule
+  (empty name, duplicate name, end-before-start, missing due date, etc.),
+  and load/save round-trip against a mocked file system.
+- Jest unit tests for the dashboard's date-filtering logic (day / month /
+  full pregnancy grouping, and pregnancy-week calculation from due date) —
+  the trickiest pure logic in the app, worth covering directly.
+- Manual testing via the Expo Go app on a physical iPhone for the full UI
+  flows: log an instant event, log a duration event, edit/delete an action
+  type, change due date, apply dashboard filters.
 
 ## Deployment & Distribution
 
-- **Local development installs**: requires a Mac with Xcode. Run directly on
-  a personal iPhone via USB/Wi-Fi using a free Apple ID (personal team).
-  Free-tier builds expire after 7 days and need reinstalling — normal during
-  active development.
-- **App Store release**: requires enrolling in the Apple Developer Program
-  ($99/year), then submitting via App Store Connect (icon, screenshots,
-  description, privacy policy URL, review). Because all data stays
-  on-device with no accounts and nothing transmitted off the phone, the App
-  Store privacy questionnaire and review are about as simple as they get for
-  a health-adjacent app.
+Entirely Mac-free, start to finish:
+
+- **Local development**: run `npx expo start` on the Windows machine, then
+  scan the printed QR code with the Expo Go app (free, from the App Store)
+  on a personal iPhone. Live reload, no build step, no Xcode. Expo Go
+  supports everything this app needs (no native modules outside Expo's
+  managed set).
+- **Standalone builds** (a real installable app, not just an Expo Go
+  preview): use Expo Application Services (EAS) Build, which compiles the
+  iOS binary in Expo's cloud and returns an installable `.ipa` — still
+  requires an Apple Developer Program account ($99/year) for code signing,
+  but no local Mac.
+- **App Store release**: EAS Submit uploads the cloud-built binary straight
+  to App Store Connect from the command line. From there it's the same
+  Apple review process (icon, screenshots, description, privacy policy
+  URL). Because all data stays on-device with no accounts and nothing
+  transmitted off the phone, the App Store privacy questionnaire and review
+  are about as simple as they get for a health-adjacent app.

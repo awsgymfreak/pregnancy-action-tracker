@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export async function readJsonFile<T>(filename: string): Promise<T | null> {
   const path = `${FileSystem.documentDirectory}${filename}`;

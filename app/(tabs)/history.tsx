@@ -1,9 +1,9 @@
 import { View, Text } from 'react-native';
 
-export default function DashboardScreen() {
+export default function HistoryScreen() {
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-      <Text>Dashboard (chart coming in Task 16)</Text>
+      <Text>History (coming in Task 15)</Text>
     </View>
   );
 }

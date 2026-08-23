@@ -8,7 +8,8 @@
     "scheme": "pregnancyactiontracker",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.warrennoronha.pregnancytracker",
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {

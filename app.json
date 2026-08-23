@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "pregnancy-app-tmp",
-    "slug": "pregnancy-app-tmp",
+    "name": "Pregnancy Action Tracker",
+    "slug": "pregnancy-action-tracker",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pregnancyapptmp",
+    "scheme": "pregnancyactiontracker",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true

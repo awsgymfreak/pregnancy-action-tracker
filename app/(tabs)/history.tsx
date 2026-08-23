@@ -69,7 +69,12 @@ export default function HistoryScreen() {
           const type = actionTypeById.get(item.actionTypeId);
           return (
             <View style={styles.eventRow}>
-              <View style={[styles.colorDot, { backgroundColor: colors[item.actionTypeId] }]} />
+              <View
+                style={[
+                  styles.colorDot,
+                  { backgroundColor: colors[item.actionTypeId] ?? '#9CA3AF' },
+                ]}
+              />
               <Text style={styles.eventText}>
                 {type?.name ?? 'Unknown'} — {new Date(item.startDate).toLocaleString()}
                 {item.endDate ? ` → ${new Date(item.endDate).toLocaleTimeString()}` : ''}

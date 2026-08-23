@@ -22,7 +22,11 @@ export default function SettingsScreen() {
     }
     setError(null);
     const payload = buildExportPayload(actionTypes, events, settings);
-    await exportToFile(payload);
+    try {
+      await exportToFile(payload);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not export backup.');
+    }
   }
 
   async function handleImport() {
@@ -57,7 +61,14 @@ export default function SettingsScreen() {
       <DateTimePicker
         value={settings ? new Date(settings.dueDate) : new Date()}
         mode="date"
-        onChange={(_, date) => date && updateDueDate(date.toISOString())}
+        onChange={async (_, date) => {
+          if (!date) return;
+          try {
+            await updateDueDate(date.toISOString());
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Could not save.');
+          }
+        }}
       />
 
       {error && <Text style={styles.error}>{error}</Text>}

@@ -39,7 +39,17 @@ export default function ActionsScreen() {
   function handleDelete(id: string) {
     Alert.alert('Delete action type?', 'This does not delete already-logged events.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteActionType(id) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteActionType(id);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Could not save action.');
+          }
+        },
+      },
     ]);
   }
 

@@ -29,13 +29,18 @@ export function validateImportPayload(raw: unknown): ExportPayload {
   });
 
   const actionTypesById = new Map(actionTypes.map((t) => [t.id, t]));
-  const events = data.events as ActionEvent[];
-  events.forEach((evt) => {
+  const rawEvents = data.events as ActionEvent[];
+  const events = rawEvents.filter((evt) => {
     const actionType = actionTypesById.get(evt.actionTypeId);
     if (!actionType) {
-      throw new ValidationError('Backup file references an unknown action type.');
+      // The action type was deleted after this event was logged (deleting an
+      // action type intentionally leaves its logged events in place). Drop
+      // the orphaned event rather than rejecting the entire import, so a
+      // user's own legitimate backup file stays importable.
+      return false;
     }
     validateActionEventDates(evt.startDate, evt.endDate, actionType.hasDuration);
+    return true;
   });
 
   const settings = data.settings as Settings;

@@ -40,12 +40,35 @@ describe('validateImportPayload', () => {
     expect(() => validateImportPayload(payload)).toThrow(ValidationError);
   });
 
-  it('rejects an event referencing an unknown action type', () => {
+  it('drops an event referencing an unknown action type rather than rejecting the whole import', () => {
+    const orphanEvent = {
+      id: 'e3',
+      actionTypeId: 'missing',
+      startDate: '2026-08-23T09:00:00.000Z',
+      endDate: null,
+    };
     const payload = {
       ...validPayload,
-      events: [{ id: 'e3', actionTypeId: 'missing', startDate: '2026-08-23T09:00:00.000Z', endDate: null }],
+      events: [orphanEvent],
     };
-    expect(() => validateImportPayload(payload)).toThrow(ValidationError);
+    const result = validateImportPayload(payload);
+    expect(result.events).toEqual([]);
+  });
+
+  it('keeps other valid events when dropping only the event with an unknown action type', () => {
+    const orphanEvent = {
+      id: 'e3',
+      actionTypeId: 'missing',
+      startDate: '2026-08-23T09:00:00.000Z',
+      endDate: null,
+    };
+    const payload = {
+      ...validPayload,
+      events: [...validPayload.events, orphanEvent],
+    };
+    const result = validateImportPayload(payload);
+    expect(result.events).toEqual(validPayload.events);
+    expect(result.events.find((e) => e.id === 'e3')).toBeUndefined();
   });
 
   it('rejects a duration-type event missing its end date', () => {

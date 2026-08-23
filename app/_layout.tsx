@@ -8,7 +8,10 @@ export default function RootLayout() {
     <SettingsProvider>
       <ActionTypesProvider>
         <EventsProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="log-event" options={{ presentation: 'modal', headerShown: true, title: 'Log Event' }} />
+          </Stack>
         </EventsProvider>
       </ActionTypesProvider>
     </SettingsProvider>

@@ -44,6 +44,27 @@
     "web": "expo start --web",
     "test": "jest"
   },
-  "private": true
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"],
+    "transform": {
+      "^.+\\.tsx?$": ["ts-jest", {
+        "babelConfig": false,
+        "tsconfig": {
+          "jsx": "react",
+          "rootDir": ".",
+          "skipLibCheck": true,
+          "noImplicitAny": false,
+          "noUnusedLocals": false,
+          "noUnusedParameters": false,
+          "esModuleInterop": true,
+          "allowSyntheticDefaultImports": true
+        }
+      }]
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?|@react-native/jest-preset|expo-modules-core|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|react-native-gifted-charts)/)"
+    ]
+  }
 }
-

@@ -34,6 +34,7 @@
     "@types/react": "~19.2.2",
     "jest": "^29.7.0",
     "jest-expo": "^57.0.4",
+    "ts-jest": "^29.4.12",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -43,11 +44,6 @@
     "web": "expo start --web",
     "test": "jest"
   },
-  "private": true,
-  "jest": {
-    "preset": "jest-expo",
-    "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|react-native-gifted-charts)/)"
-    ]
-  }
+  "private": true
 }
+

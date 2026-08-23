@@ -50,6 +50,12 @@
     "preset": "jest-expo",
     "setupFilesAfterEnv": [
       "<rootDir>/jest.setup.js"
+    ],
+    "modulePathIgnorePatterns": [
+      "<rootDir>/.claude/worktrees/"
+    ],
+    "watchPathIgnorePatterns": [
+      "<rootDir>/.claude/worktrees/"
     ]
   }
 }

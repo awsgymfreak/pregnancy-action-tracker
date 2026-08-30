@@ -1,9 +1,10 @@
 export function readJson<T>(key: string): T | null {
-  const raw = window.localStorage.getItem(key);
-  if (raw === null) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw === null ? null : (JSON.parse(raw) as T);
+  } catch {
     return null;
   }
-  return JSON.parse(raw) as T;
 }
 
 export function writeJson<T>(key: string, data: T): void {

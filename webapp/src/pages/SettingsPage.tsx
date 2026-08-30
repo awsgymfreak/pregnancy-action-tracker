@@ -18,8 +18,12 @@ export function SettingsPage() {
       return;
     }
     setError(null);
-    const payload = buildExportPayload(actionTypes, events, settings);
-    downloadExportFile(payload);
+    try {
+      const payload = buildExportPayload(actionTypes, events, settings);
+      downloadExportFile(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export backup.');
+    }
   }
 
   function handleImportClick() {

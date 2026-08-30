@@ -34,6 +34,7 @@ body {
   max-width: 720px;
   margin: 0 auto;
   padding: 16px;
+  padding-bottom: 96px;
 }
 
 .week-header {
@@ -113,9 +114,9 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 14px;
   padding: 0;
   font: inherit;
+  font-size: 14px;
 }
 
 .edit-link {
@@ -137,8 +138,8 @@ body {
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 10px;
-  font-size: 15px;
   font: inherit;
+  font-size: 15px;
 }
 
 .switch-row {

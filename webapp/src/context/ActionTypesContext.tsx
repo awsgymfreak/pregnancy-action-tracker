@@ -26,7 +26,12 @@ const ActionTypesContext = createContext<ActionTypesContextValue | undefined>(un
 function loadInitial(): ActionType[] {
   const loaded = readJson<ActionType[]>(STORAGE_KEY);
   if (loaded === null) {
-    writeJson(STORAGE_KEY, DEFAULT_ACTION_TYPES);
+    try {
+      writeJson(STORAGE_KEY, DEFAULT_ACTION_TYPES);
+    } catch {
+      // Ignore — DEFAULT_ACTION_TYPES is still returned and used in memory;
+      // persistence will be retried on the next successful write via persist().
+    }
     return DEFAULT_ACTION_TYPES;
   }
   return loaded;

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ActionTypesProvider } from './context/ActionTypesContext';
 import { EventsProvider } from './context/EventsContext';
 import { SettingsProvider } from './context/SettingsContext';
@@ -14,7 +14,7 @@ export default function App() {
     <SettingsProvider>
       <ActionTypesProvider>
         <EventsProvider>
-          <BrowserRouter>
+          <HashRouter>
             <main className="page-content">
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
@@ -26,7 +26,7 @@ export default function App() {
               </Routes>
             </main>
             <NavBar />
-          </BrowserRouter>
+          </HashRouter>
         </EventsProvider>
       </ActionTypesProvider>
     </SettingsProvider>

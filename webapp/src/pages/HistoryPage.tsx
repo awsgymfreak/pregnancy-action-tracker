@@ -8,9 +8,20 @@ import {
   sortEventsMostRecentFirst,
   type HistoryRange,
 } from '../utils/historyFilter';
+import { groupEventsByDay } from '../utils/groupByDay';
 import { assignColors } from '../utils/colors';
 
 const RANGES: HistoryRange[] = ['day', 'week', 'all'];
+
+const RANGE_LABELS: Record<HistoryRange, string> = {
+  day: 'Last 24 hours',
+  week: 'Last 7 days',
+  all: 'All time',
+};
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
 export function HistoryPage() {
   const { actionTypes } = useActionTypes();
@@ -28,58 +39,82 @@ export function HistoryPage() {
     return sortEventsMostRecentFirst(byType);
   }, [events, range, actionTypeFilter]);
 
+  const dayGroups = useMemo(() => groupEventsByDay(visibleEvents), [visibleEvents]);
+
   return (
     <div>
-      <div className="filter-row">
-        {RANGES.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            className={range === r ? 'filter-button filter-button-active' : 'filter-button'}
+      <div className="card">
+        <div className="select-row">
+          <select
+            className="select-pill"
+            aria-label="Time range"
+            value={range}
+            onChange={(e) => setRange(e.target.value as HistoryRange)}
           >
-            {r}
-          </button>
-        ))}
-      </div>
-      <div className="filter-row">
-        <button
-          onClick={() => setActionTypeFilter(null)}
-          className={
-            actionTypeFilter === null ? 'filter-button filter-button-active' : 'filter-button'
-          }
-        >
-          All
-        </button>
-        {actionTypes.map((type) => (
-          <button
-            key={type.id}
-            onClick={() => setActionTypeFilter(type.id)}
-            className={
-              actionTypeFilter === type.id ? 'filter-button filter-button-active' : 'filter-button'
-            }
+            {RANGES.map((r) => (
+              <option key={r} value={r}>
+                {RANGE_LABELS[r]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="select-pill"
+            aria-label="Filter by action"
+            value={actionTypeFilter ?? 'all'}
+            onChange={(e) => setActionTypeFilter(e.target.value === 'all' ? null : e.target.value)}
           >
-            {type.name}
-          </button>
-        ))}
+            <option value="all">All actions</option>
+            {actionTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-      <div>
-        {visibleEvents.map((item) => {
-          const type = actionTypeById.get(item.actionTypeId);
-          return (
-            <div key={item.id} className="list-row">
-              <span
-                className="color-dot"
-                style={{ backgroundColor: colors[item.actionTypeId] ?? '#9CA3AF' }}
-              />
-              <span className="row-text" style={{ flex: 1 }}>
-                {type?.name ?? 'Unknown'} — {new Date(item.startDate).toLocaleString()}
-                {item.endDate ? ` → ${new Date(item.endDate).toLocaleTimeString()}` : ''}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      <button className="fab" onClick={() => navigate('/log-event')}>
+
+      {dayGroups.length === 0 && (
+        <p className="week-header-muted">No events logged for this range.</p>
+      )}
+
+      {dayGroups.map((group) => (
+        <div className="day-group" key={`${group.label}-${group.events[0].id}`}>
+          <p className="day-group-header">{group.label}</p>
+          {group.events.map((item) => {
+            const type = actionTypeById.get(item.actionTypeId);
+            const start = new Date(item.startDate);
+            const timeLabel = item.endDate
+              ? `${formatTime(start)} – ${formatTime(new Date(item.endDate))}`
+              : formatTime(start);
+            return (
+              <div
+                key={item.id}
+                className="event-card"
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate(`/log-event/${item.id}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/log-event/${item.id}`);
+                  }
+                }}
+              >
+                <span
+                  className="event-accent"
+                  style={{ backgroundColor: colors[item.actionTypeId] ?? '#9CA3AF' }}
+                />
+                <div className="event-body">
+                  <span className="event-name">{type?.name ?? 'Unknown'}</span>
+                  <span className="event-time">{timeLabel}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+
+      <button className="fab" onClick={() => navigate('/log-event')} aria-label="Log new event">
         +
       </button>
     </div>

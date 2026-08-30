@@ -1,16 +1,66 @@
-import { useRef, useState, type ChangeEvent } from 'react';
+import { useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { useActionTypes } from '../context/ActionTypesContext';
 import { useEvents } from '../context/EventsContext';
 import { buildExportPayload, downloadExportFile } from '../backup/exportData';
 import { readFileAsJson, validateImportPayload } from '../backup/importData';
+import { parseNotesText, type ParseNotesResult } from '../backup/importNotes';
+
+function formatPreviewTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
 export function SettingsPage() {
   const { settings, updateDueDate, replaceAll: replaceSettings } = useSettings();
   const { actionTypes, replaceAll: replaceActionTypes } = useActionTypes();
-  const { events, replaceAll: replaceEvents } = useEvents();
+  const { events, addEvents, replaceAll: replaceEvents } = useEvents();
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [notesText, setNotesText] = useState('');
+  const [notesPreview, setNotesPreview] = useState<ParseNotesResult | null>(null);
+  const [notesImportedCount, setNotesImportedCount] = useState<number | null>(null);
+
+  const notesGroups = useMemo(() => {
+    if (!notesPreview) {
+      return [];
+    }
+    const groups: { date: string; events: typeof notesPreview.events }[] = [];
+    notesPreview.events.forEach((evt) => {
+      const last = groups[groups.length - 1];
+      if (last && last.date === evt.date) {
+        last.events.push(evt);
+      } else {
+        groups.push({ date: evt.date, events: [evt] });
+      }
+    });
+    return groups;
+  }, [notesPreview]);
+
+  function handlePreviewNotes() {
+    setNotesImportedCount(null);
+    setNotesPreview(parseNotesText(notesText, actionTypes));
+  }
+
+  async function handleConfirmNotesImport() {
+    if (!notesPreview || notesPreview.errors.length > 0 || notesPreview.events.length === 0) {
+      return;
+    }
+    try {
+      await addEvents(
+        notesPreview.events.map((evt) => ({
+          actionTypeId: evt.actionTypeId,
+          startDate: evt.startDate,
+          endDate: evt.endDate,
+        }))
+      );
+      setNotesImportedCount(notesPreview.events.length);
+      setNotesText('');
+      setNotesPreview(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not import notes.');
+    }
+  }
 
   function handleExport() {
     if (!settings) {
@@ -53,37 +103,112 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="form">
-      <p className="field-label">Due date</p>
-      <input
-        className="text-input"
-        type="date"
-        value={settings ? settings.dueDate.slice(0, 10) : ''}
-        onChange={async (e) => {
-          if (!e.target.value) return;
-          try {
-            await updateDueDate(new Date(e.target.value).toISOString());
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Could not save.');
-          }
-        }}
-      />
+    <div>
+      <div className="form card">
+        <p className="field-label">Due date</p>
+        <input
+          className="text-input"
+          type="date"
+          value={settings ? settings.dueDate.slice(0, 10) : ''}
+          onChange={async (e) => {
+            if (!e.target.value) return;
+            try {
+              await updateDueDate(new Date(e.target.value).toISOString());
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Could not save.');
+            }
+          }}
+        />
 
-      {error && <p className="error-text">{error}</p>}
+        {error && <p className="error-text">{error}</p>}
 
-      <button className="primary-button" onClick={handleExport}>
-        Export Data
-      </button>
-      <button className="primary-button" onClick={handleImportClick}>
-        Import Data
-      </button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="application/json"
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+        <button className="primary-button" onClick={handleExport}>
+          Export Data
+        </button>
+        <button className="primary-button" onClick={handleImportClick}>
+          Import Data
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json"
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
+      </div>
+
+      <div className="form card">
+        <p className="field-label">Import notes</p>
+        <p className="week-header-muted">
+          Paste cleaned-up notes in this format, one entry per line:
+          <br />
+          <code>
+            2026-08-29
+            <br />
+            06:53 Baby movement
+            <br />
+            14:20-14:35 Contraction
+          </code>
+          <br />
+          Action names must match an existing action exactly (see the Actions tab). Any line can
+          optionally use a start-end range instead of a single time, to log an end time too.
+        </p>
+        <textarea
+          className="textarea"
+          placeholder={'2026-08-29\n06:53 Baby movement'}
+          value={notesText}
+          onChange={(e) => {
+            setNotesText(e.target.value);
+            setNotesPreview(null);
+            setNotesImportedCount(null);
+          }}
+        />
+        <button className="primary-button" onClick={handlePreviewNotes} disabled={!notesText.trim()}>
+          Preview
+        </button>
+
+        {notesImportedCount !== null && (
+          <p className="week-header-muted">Imported {notesImportedCount} event(s).</p>
+        )}
+
+        {notesPreview && notesPreview.errors.length > 0 && (
+          <div className="error-list">
+            {notesPreview.errors.map((message) => (
+              <p className="error-text" key={message}>
+                {message}
+              </p>
+            ))}
+          </div>
+        )}
+
+        {notesPreview && notesPreview.errors.length === 0 && notesPreview.events.length > 0 && (
+          <>
+            {notesGroups.map((group) => (
+              <div className="day-group" key={group.date}>
+                <p className="day-group-header">{group.date}</p>
+                {group.events.map((evt) => (
+                  <div key={evt.line} className="event-card event-card-static">
+                    <div className="event-body">
+                      <span className="event-name">{evt.actionName}</span>
+                      <span className="event-time">
+                        {formatPreviewTime(evt.startDate)}
+                        {evt.endDate ? ` – ${formatPreviewTime(evt.endDate)}` : ''}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <button className="primary-button" onClick={handleConfirmNotesImport}>
+              Import {notesPreview.events.length} event(s)
+            </button>
+          </>
+        )}
+
+        {notesPreview && notesPreview.errors.length === 0 && notesPreview.events.length === 0 && (
+          <p className="week-header-muted">No events found in the pasted text.</p>
+        )}
+      </div>
     </div>
   );
 }

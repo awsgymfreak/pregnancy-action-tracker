@@ -4,21 +4,18 @@ import { useActionTypes } from '../context/ActionTypesContext';
 export function ActionsPage() {
   const { actionTypes, addActionType, updateActionType, deleteActionType } = useActionTypes();
   const [name, setName] = useState('');
-  const [hasDuration, setHasDuration] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  function startEdit(id: string, currentName: string, currentHasDuration: boolean) {
+  function startEdit(id: string, currentName: string) {
     setEditingId(id);
     setName(currentName);
-    setHasDuration(currentHasDuration);
     setError(null);
   }
 
   function resetForm() {
     setEditingId(null);
     setName('');
-    setHasDuration(false);
     setError(null);
   }
 
@@ -26,9 +23,9 @@ export function ActionsPage() {
     e.preventDefault();
     try {
       if (editingId) {
-        await updateActionType(editingId, { name, hasDuration });
+        await updateActionType(editingId, { name });
       } else {
-        await addActionType(name, hasDuration);
+        await addActionType(name);
       }
       resetForm();
     } catch (err) {
@@ -49,18 +46,15 @@ export function ActionsPage() {
 
   return (
     <div>
-      <div>
+      <div className="card">
         {actionTypes.map((item) => (
           <div key={item.id} className="list-row">
-            <span className="row-text">
-              {item.name}
-              {item.hasDuration ? ' (duration)' : ''}
-            </span>
+            <span className="row-text">{item.name}</span>
             <div className="row-actions">
               <button
                 type="button"
                 className="link-button edit-link"
-                onClick={() => startEdit(item.id, item.name, item.hasDuration)}
+                onClick={() => startEdit(item.id, item.name)}
               >
                 Edit
               </button>
@@ -75,21 +69,13 @@ export function ActionsPage() {
           </div>
         ))}
       </div>
-      <form className="form" onSubmit={handleSubmit}>
+      <form className="form card" onSubmit={handleSubmit}>
         <input
           className="text-input"
           placeholder="Action name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
-        <label className="switch-row">
-          <span>Has duration (start + end)</span>
-          <input
-            type="checkbox"
-            checked={hasDuration}
-            onChange={(e) => setHasDuration(e.target.checked)}
-          />
-        </label>
         {error && <p className="error-text">{error}</p>}
         <button type="submit" className="primary-button">
           {editingId ? 'Save Changes' : 'Add Action'}

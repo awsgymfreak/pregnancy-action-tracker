@@ -6,17 +6,14 @@ import { validateActionTypeName } from '../validation/validators';
 const STORAGE_KEY = 'pregnancy-tracker:actionTypes';
 
 const DEFAULT_ACTION_TYPES: ActionType[] = [
-  { id: 'default-baby-movement', name: 'Baby movement', hasDuration: false, isDefault: true },
-  { id: 'default-contraction', name: 'Contraction', hasDuration: true, isDefault: true },
+  { id: 'default-baby-movement', name: 'Baby movement', isDefault: true },
+  { id: 'default-contraction', name: 'Contraction', isDefault: true },
 ];
 
 interface ActionTypesContextValue {
   actionTypes: ActionType[];
-  addActionType: (name: string, hasDuration: boolean) => Promise<ActionType>;
-  updateActionType: (
-    id: string,
-    updates: { name?: string; hasDuration?: boolean }
-  ) => Promise<void>;
+  addActionType: (name: string) => Promise<ActionType>;
+  updateActionType: (id: string, updates: { name?: string }) => Promise<void>;
   deleteActionType: (id: string) => Promise<void>;
   replaceAll: (actionTypes: ActionType[]) => Promise<void>;
 }
@@ -51,7 +48,7 @@ export function ActionTypesProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  async function addActionType(name: string, hasDuration: boolean) {
+  async function addActionType(name: string) {
     const trimmed = validateActionTypeName(
       name,
       actionTypes.map((a) => a.name)
@@ -59,17 +56,13 @@ export function ActionTypesProvider({ children }: { children: ReactNode }) {
     const newType: ActionType = {
       id: crypto.randomUUID(),
       name: trimmed,
-      hasDuration,
       isDefault: false,
     };
     await persist([...actionTypes, newType]);
     return newType;
   }
 
-  async function updateActionType(
-    id: string,
-    updates: { name?: string; hasDuration?: boolean }
-  ) {
+  async function updateActionType(id: string, updates: { name?: string }) {
     const existing = actionTypes.find((a) => a.id === id);
     if (!existing) {
       throw new Error('Action type not found.');
@@ -81,9 +74,7 @@ export function ActionTypesProvider({ children }: { children: ReactNode }) {
         actionTypes.filter((a) => a.id !== id).map((a) => a.name)
       );
     }
-    const next = actionTypes.map((a) =>
-      a.id === id ? { ...a, name, hasDuration: updates.hasDuration ?? a.hasDuration } : a
-    );
+    const next = actionTypes.map((a) => (a.id === id ? { ...a, name } : a));
     await persist(next);
   }
 

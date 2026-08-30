@@ -43,18 +43,17 @@ export function validateImportPayload(raw: unknown): ExportPayload {
     seenNames.push(type.name);
   });
 
-  const actionTypesById = new Map(actionTypes.map((t) => [t.id, t]));
+  const actionTypeIds = new Set(actionTypes.map((t) => t.id));
   const rawEvents = data.events as ActionEvent[];
   const events = rawEvents.filter((evt) => {
-    const actionType = actionTypesById.get(evt.actionTypeId);
-    if (!actionType) {
+    if (!actionTypeIds.has(evt.actionTypeId)) {
       // The action type was deleted after this event was logged (deleting an
       // action type intentionally leaves its logged events in place). Drop
       // the orphaned event rather than rejecting the entire import, so a
       // user's own legitimate backup file stays importable.
       return false;
     }
-    validateActionEventDates(evt.startDate, evt.endDate, actionType.hasDuration);
+    validateActionEventDates(evt.startDate, evt.endDate);
     return true;
   });
 

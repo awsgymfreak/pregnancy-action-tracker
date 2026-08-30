@@ -15,7 +15,6 @@ export default function App() {
       <ActionTypesProvider>
         <EventsProvider>
           <BrowserRouter>
-            <NavBar />
             <main className="page-content">
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
@@ -23,8 +22,10 @@ export default function App() {
                 <Route path="/actions" element={<ActionsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/log-event" element={<LogEventPage />} />
+                <Route path="/log-event/:eventId" element={<LogEventPage />} />
               </Routes>
             </main>
+            <NavBar />
           </BrowserRouter>
         </EventsProvider>
       </ActionTypesProvider>

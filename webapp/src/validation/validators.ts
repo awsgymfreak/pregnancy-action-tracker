@@ -20,17 +20,13 @@ export function validateActionTypeName(name: string, existingNames: string[]): s
   return trimmed;
 }
 
-export function validateActionEventDates(
-  startDate: string,
-  endDate: string | null,
-  hasDuration: boolean
-): void {
+export function validateActionEventDates(startDate: string, endDate: string | null): void {
   if (!startDate || Number.isNaN(Date.parse(startDate))) {
     throw new ValidationError('Start time is required.');
   }
-  if (hasDuration) {
-    if (!endDate || Number.isNaN(Date.parse(endDate))) {
-      throw new ValidationError('End time is required for this action.');
+  if (endDate !== null) {
+    if (Number.isNaN(Date.parse(endDate))) {
+      throw new ValidationError('End time is invalid.');
     }
     if (new Date(endDate).getTime() < new Date(startDate).getTime()) {
       throw new ValidationError('End time must be after start time.');

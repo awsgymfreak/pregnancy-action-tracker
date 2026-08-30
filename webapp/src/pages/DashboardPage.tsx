@@ -10,6 +10,18 @@ import { filterEventsByActionType } from '../utils/historyFilter';
 
 const RANGES: DashboardRange[] = ['day', 'month', 'pregnancy'];
 
+const RANGE_LABELS: Record<DashboardRange, string> = {
+  day: 'Today (by hour)',
+  month: 'This month (by day)',
+  pregnancy: 'Whole pregnancy (by week)',
+};
+
+const BAR_WIDTH_PX: Record<DashboardRange, number> = {
+  day: 20,
+  month: 16,
+  pregnancy: 14,
+};
+
 export function DashboardPage() {
   const { actionTypes } = useActionTypes();
   const { events } = useEvents();
@@ -39,71 +51,84 @@ export function DashboardPage() {
 
   const currentWeek = settings ? getCurrentPregnancyWeek(settings.dueDate) : null;
   const canShowChart = range !== 'pregnancy' || Boolean(settings);
+  const chartMinWidth = Math.max(chartRows.length * BAR_WIDTH_PX[range], 320);
 
   return (
     <div>
-      {currentWeek !== null ? (
-        <p className="week-header">Week {currentWeek}</p>
-      ) : (
-        <p className="week-header-muted">Set a due date in Settings to see your week</p>
-      )}
+      <div className="card">
+        {currentWeek !== null ? (
+          <p className="week-header">Week {currentWeek}</p>
+        ) : (
+          <p className="week-header-muted">Set a due date in Settings to see your week</p>
+        )}
 
-      <div className="filter-row">
-        {RANGES.map((r) => (
-          <button
-            key={r}
-            onClick={() => setRange(r)}
-            className={range === r ? 'filter-button filter-button-active' : 'filter-button'}
+        <div className="select-row">
+          <select
+            className="select-pill"
+            aria-label="Time range"
+            value={range}
+            onChange={(e) => setRange(e.target.value as DashboardRange)}
           >
-            {r}
-          </button>
-        ))}
-      </div>
-
-      <div className="filter-row">
-        <button
-          onClick={() => setActionTypeFilter(null)}
-          className={
-            actionTypeFilter === null ? 'filter-button filter-button-active' : 'filter-button'
-          }
-        >
-          All
-        </button>
-        {actionTypes.map((type) => (
-          <button
-            key={type.id}
-            onClick={() => setActionTypeFilter(type.id)}
-            className={
-              actionTypeFilter === type.id ? 'filter-button filter-button-active' : 'filter-button'
-            }
+            {RANGES.map((r) => (
+              <option key={r} value={r}>
+                {RANGE_LABELS[r]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="select-pill"
+            aria-label="Filter by action"
+            value={actionTypeFilter ?? 'all'}
+            onChange={(e) => setActionTypeFilter(e.target.value === 'all' ? null : e.target.value)}
           >
-            {type.name}
-          </button>
-        ))}
+            <option value="all">All actions</option>
+            {actionTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {!canShowChart ? (
-        <p className="week-header-muted">Set a due date in Settings to see this view</p>
+        <div className="card">
+          <p className="week-header-muted">Set a due date in Settings to see this view</p>
+        </div>
       ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={chartRows}>
-            <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-            <YAxis allowDecimals={false} />
-            <Tooltip />
-            {filteredTypes.map((type) => (
-              <Bar key={type.id} dataKey={type.id} name={type.name} stackId="stack" fill={colors[type.id]} />
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="card">
+          <div className="chart-scroll">
+            <div style={{ minWidth: chartMinWidth, height: 260 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartRows}>
+                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  {filteredTypes.map((type) => (
+                    <Bar
+                      key={type.id}
+                      dataKey={type.id}
+                      name={type.name}
+                      stackId="stack"
+                      fill={colors[type.id]}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
       )}
 
-      <div className="legend">
-        {actionTypes.map((type) => (
-          <div key={type.id} className="legend-row">
-            <span className="color-dot" style={{ backgroundColor: colors[type.id] }} />
-            <span>{type.name}</span>
-          </div>
-        ))}
+      <div className="card">
+        <div className="legend">
+          {actionTypes.map((type) => (
+            <div key={type.id} className="legend-row">
+              <span className="color-dot" style={{ backgroundColor: colors[type.id] }} />
+              <span>{type.name}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

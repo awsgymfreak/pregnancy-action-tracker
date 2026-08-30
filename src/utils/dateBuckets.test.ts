@@ -151,4 +151,12 @@ describe('buildStackData', () => {
 
     expect(result[0].stacks).toEqual([{ value: 2, color: '#111111' }]);
   });
+
+  it('gives a bucket with no events a single zero-value transparent stack instead of an empty array', () => {
+    const buckets = [{ label: '09:00', countsByActionType: {} }];
+    const colors = { [movement.id]: '#111111', [contraction.id]: '#222222' };
+    const result = buildStackData(buckets, [movement, contraction], colors);
+
+    expect(result[0].stacks).toEqual([{ value: 0, color: 'transparent' }]);
+  });
 });

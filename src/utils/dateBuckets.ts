@@ -122,13 +122,19 @@ export function buildStackData(
   actionTypes: ActionType[],
   colorsByActionTypeId: Record<string, string>
 ): ChartStackItem[] {
-  return buckets.map((bucket) => ({
-    label: bucket.label,
-    stacks: actionTypes
+  return buckets.map((bucket) => {
+    const stacks = actionTypes
       .filter((type) => (bucket.countsByActionType[type.id] ?? 0) > 0)
       .map((type) => ({
         value: bucket.countsByActionType[type.id],
         color: colorsByActionTypeId[type.id],
-      })),
-  }));
+      }));
+    // react-native-gifted-charts reads stacks[0] unconditionally, so an empty
+    // array (a bucket with no events) crashes the chart. A zero-value,
+    // invisible segment keeps the bucket rendered without showing a bar.
+    return {
+      label: bucket.label,
+      stacks: stacks.length > 0 ? stacks : [{ value: 0, color: 'transparent' }],
+    };
+  });
 }

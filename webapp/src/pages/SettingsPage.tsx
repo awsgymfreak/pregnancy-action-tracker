@@ -12,7 +12,8 @@ function formatPreviewTime(iso: string): string {
 
 export function SettingsPage() {
   const { settings, updateDueDate, replaceAll: replaceSettings } = useSettings();
-  const { actionTypes, replaceAll: replaceActionTypes } = useActionTypes();
+  const { actionTypes, addActionType, addActionTypes, replaceAll: replaceActionTypes } =
+    useActionTypes();
   const { events, addEvents, replaceAll: replaceEvents } = useEvents();
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -40,6 +41,27 @@ export function SettingsPage() {
   function handlePreviewNotes() {
     setNotesImportedCount(null);
     setNotesPreview(parseNotesText(notesText, actionTypes));
+  }
+
+  async function handleCreateMissingAction(name: string) {
+    try {
+      const newType = await addActionType(name);
+      setNotesPreview((prev) => (prev ? parseNotesText(notesText, [...actionTypes, newType]) : prev));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create action.');
+    }
+  }
+
+  async function handleCreateAllMissingActions() {
+    if (!notesPreview || notesPreview.missingActionNames.length === 0) {
+      return;
+    }
+    try {
+      const newTypes = await addActionTypes(notesPreview.missingActionNames);
+      setNotesPreview(parseNotesText(notesText, [...actionTypes, ...newTypes]));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not create actions.');
+    }
   }
 
   async function handleConfirmNotesImport() {
@@ -150,7 +172,8 @@ export function SettingsPage() {
             14:20-14:35 Contraction
           </code>
           <br />
-          Action names must match an existing action exactly (see the Actions tab). Any line can
+          Action names must match an existing action exactly (case-insensitive) — if one doesn't
+          exist yet, the preview lets you create it without leaving this page. Any line can
           optionally use a start-end range instead of a single time, to log an end time too.
         </p>
         <textarea
@@ -181,6 +204,33 @@ export function SettingsPage() {
           </div>
         )}
 
+        {notesPreview && notesPreview.missingActionNames.length > 0 && (
+          <div className="card" style={{ background: 'var(--color-accent-soft)' }}>
+            <p className="field-label" style={{ marginTop: 0 }}>
+              {notesPreview.missingActionNames.length === 1
+                ? "1 action doesn't exist yet"
+                : `${notesPreview.missingActionNames.length} actions don't exist yet`}
+            </p>
+            {notesPreview.missingActionNames.map((name) => (
+              <div key={name} className="list-row">
+                <span className="row-text">{name}</span>
+                <button
+                  type="button"
+                  className="link-button edit-link"
+                  onClick={() => handleCreateMissingAction(name)}
+                >
+                  Create
+                </button>
+              </div>
+            ))}
+            {notesPreview.missingActionNames.length > 1 && (
+              <button className="primary-button" style={{ marginTop: 12 }} onClick={handleCreateAllMissingActions}>
+                Create all {notesPreview.missingActionNames.length}
+              </button>
+            )}
+          </div>
+        )}
+
         {notesPreview && notesPreview.errors.length === 0 && notesPreview.events.length > 0 && (
           <>
             {notesGroups.map((group) => (
@@ -205,7 +255,10 @@ export function SettingsPage() {
           </>
         )}
 
-        {notesPreview && notesPreview.errors.length === 0 && notesPreview.events.length === 0 && (
+        {notesPreview &&
+          notesPreview.errors.length === 0 &&
+          notesPreview.events.length === 0 &&
+          notesPreview.missingActionNames.length === 0 && (
           <p className="week-header-muted">No events found in the pasted text.</p>
         )}
       </div>

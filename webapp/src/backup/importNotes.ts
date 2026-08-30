@@ -12,6 +12,11 @@ export interface ParsedNoteEvent {
 export interface ParseNotesResult {
   events: ParsedNoteEvent[];
   errors: string[];
+  // Action names referenced in the text that don't match an existing action
+  // type yet. Lines using these are simply left out of `events` — not
+  // treated as errors — since the UI offers to create them inline and
+  // re-parse, rather than forcing the user to leave the screen first.
+  missingActionNames: string[];
 }
 
 const DATE_LINE = /^\d{4}-\d{2}-\d{2}$/;
@@ -36,11 +41,13 @@ function toIsoLocal(date: string, time: string): string {
 //   HH:MM-HH:MM Action name    (optional end time — any action can have one)
 //
 // A blank line or the next date header starts a new day. Action names must
-// match an existing action type's name exactly (case-insensitive).
+// match an existing action type's name exactly (case-insensitive); if one
+// doesn't exist yet it's reported via `missingActionNames`, not an error.
 export function parseNotesText(text: string, actionTypes: ActionType[]): ParseNotesResult {
   const byName = new Map(actionTypes.map((t) => [t.name.trim().toLowerCase(), t]));
   const events: ParsedNoteEvent[] = [];
   const errors: string[] = [];
+  const missingActionNames = new Map<string, string>(); // lowercase key -> original-cased name
   let currentDate: string | null = null;
 
   text.split(/\r?\n/).forEach((rawLine, index) => {
@@ -70,9 +77,9 @@ export function parseNotesText(text: string, actionTypes: ActionType[]): ParseNo
     const actionName = rawActionName.trim();
     const actionType = byName.get(actionName.toLowerCase());
     if (!actionType) {
-      errors.push(
-        `Line ${lineNumber}: unknown action "${actionName}" — add it in the Actions tab first, or fix the name.`
-      );
+      if (!missingActionNames.has(actionName.toLowerCase())) {
+        missingActionNames.set(actionName.toLowerCase(), actionName);
+      }
       return;
     }
 
@@ -93,5 +100,5 @@ export function parseNotesText(text: string, actionTypes: ActionType[]): ParseNo
     }
   });
 
-  return { events, errors };
+  return { events, errors, missingActionNames: Array.from(missingActionNames.values()) };
 }

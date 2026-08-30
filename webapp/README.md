@@ -60,12 +60,14 @@ Rules:
 - To log an end time too, use a start–end range on one line instead:
   `HH:MM-HH:MM Action name`. Any action can optionally have an end time; it's not tied to the
   action type.
-- `Action name` must match an existing action type's name exactly (case-insensitive) — create it
-  in the Actions tab first if it doesn't exist yet.
+- `Action name` must match an existing action type's name exactly (case-insensitive). If it
+  doesn't exist yet, the preview offers a "Create" button right there — no need to leave the
+  page and go to the Actions tab first.
 - Blank lines are ignored.
 
 This format is intentionally strict rather than a fuzzy free-text parser: real notes-app data is
 too inconsistent (missing AM/PM, typos, mixed separators) to guess at reliably for health data.
 Clean the text into this shape before pasting. The Settings page shows a parsed preview — grouped
-by day, with any format errors listed by line number — before anything is saved, so you can fix
-and re-preview rather than risk a bad import.
+by day, with any format errors listed by line number, and any unrecognized action names offered
+as one-click "Create" buttons (or "Create all N" if there are several) — before anything is
+saved, so you can fix formatting issues and create missing actions without losing your place.

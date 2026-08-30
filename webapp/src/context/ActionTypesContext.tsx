@@ -13,6 +13,7 @@ const DEFAULT_ACTION_TYPES: ActionType[] = [
 interface ActionTypesContextValue {
   actionTypes: ActionType[];
   addActionType: (name: string) => Promise<ActionType>;
+  addActionTypes: (names: string[]) => Promise<ActionType[]>;
   updateActionType: (id: string, updates: { name?: string }) => Promise<void>;
   deleteActionType: (id: string) => Promise<void>;
   replaceAll: (actionTypes: ActionType[]) => Promise<void>;
@@ -62,6 +63,24 @@ export function ActionTypesProvider({ children }: { children: ReactNode }) {
     return newType;
   }
 
+  async function addActionTypes(names: string[]) {
+    // Building all new types before a single persist() call — calling
+    // addActionType() in a loop would have each call read the same stale
+    // `actionTypes` closure (no re-render happens between synchronous/
+    // microtask iterations), so only the last call's write would survive.
+    const newTypes: ActionType[] = [];
+    const existingNames = actionTypes.map((a) => a.name);
+    names.forEach((name) => {
+      const trimmed = validateActionTypeName(name, [
+        ...existingNames,
+        ...newTypes.map((t) => t.name),
+      ]);
+      newTypes.push({ id: crypto.randomUUID(), name: trimmed, isDefault: false });
+    });
+    await persist([...actionTypes, ...newTypes]);
+    return newTypes;
+  }
+
   async function updateActionType(id: string, updates: { name?: string }) {
     const existing = actionTypes.find((a) => a.id === id);
     if (!existing) {
@@ -88,7 +107,14 @@ export function ActionTypesProvider({ children }: { children: ReactNode }) {
 
   return (
     <ActionTypesContext.Provider
-      value={{ actionTypes, addActionType, updateActionType, deleteActionType, replaceAll }}
+      value={{
+        actionTypes,
+        addActionType,
+        addActionTypes,
+        updateActionType,
+        deleteActionType,
+        replaceAll,
+      }}
     >
       {children}
     </ActionTypesContext.Provider>

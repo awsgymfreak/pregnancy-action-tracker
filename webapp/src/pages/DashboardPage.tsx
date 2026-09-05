@@ -8,11 +8,12 @@ import { assignColors } from '../utils/colors';
 import { getCurrentPregnancyWeek } from '../utils/pregnancyWeek';
 import { filterEventsByActionType } from '../utils/historyFilter';
 
-const RANGES: DashboardRange[] = ['day', 'week', 'month', 'pregnancy'];
+const RANGES: DashboardRange[] = ['day', 'week', 'twoWeeks', 'month', 'pregnancy'];
 
 const RANGE_LABELS: Record<DashboardRange, string> = {
   day: 'Today (by hour)',
   week: 'Last 7 days',
+  twoWeeks: 'Last 2 weeks',
   month: 'This month (by day)',
   pregnancy: 'Whole pregnancy (by week)',
 };

@@ -22,7 +22,7 @@ export function DashboardPage() {
   const { actionTypes } = useActionTypes();
   const { events } = useEvents();
   const { settings } = useSettings();
-  const [range, setRange] = useState<DashboardRange>('day');
+  const [range, setRange] = useState<DashboardRange>('week');
   const [actionTypeFilter, setActionTypeFilter] = useState<string | null>(null);
 
   const colors = useMemo(() => assignColors(actionTypes.map((t) => t.id)), [actionTypes]);

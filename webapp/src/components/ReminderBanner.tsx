@@ -12,6 +12,7 @@ import {
   isInactivityDue,
   formatLocalDate,
   addDaysToDateOnly,
+  parseLocalDate,
 } from '../utils/reminders';
 import type { Reminder } from '../models/types';
 
@@ -19,6 +20,10 @@ const INACTIVITY_DISMISS_KEY = 'pregnancy-tracker:inactivity-dismissed-until';
 
 function readInactivityDismissedUntil(): string | null {
   return readJson<string>(INACTIVITY_DISMISS_KEY);
+}
+
+function formatReminderDate(dateOnly: string): string {
+  return parseLocalDate(dateOnly).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 export function ReminderBanner() {
@@ -105,7 +110,10 @@ export function ReminderBanner() {
             }
           }}
         >
-          <span className="reminder-banner-text">{reminder.title}</span>
+          <span className="reminder-banner-text">
+            {reminder.title}
+            <span className="reminder-banner-date"> · Due {formatReminderDate(reminder.date)}</span>
+          </span>
           <div className="reminder-banner-actions">
             <button
               type="button"

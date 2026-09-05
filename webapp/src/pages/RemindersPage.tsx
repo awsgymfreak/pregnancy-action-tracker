@@ -3,6 +3,23 @@ import { useReminders } from '../context/RemindersContext';
 import { parseLocalDate, sortRemindersByDate } from '../utils/reminders';
 import type { Reminder } from '../models/types';
 
+type RecurrenceMode = 'once' | 'week' | 'month' | 'custom';
+
+const RECURRENCE_PRESET_DAYS: Record<'week' | 'month', number> = { week: 7, month: 30 };
+
+function recurrenceModeFor(recurrenceDays: number | null): RecurrenceMode {
+  if (recurrenceDays === null) {
+    return 'once';
+  }
+  if (recurrenceDays === RECURRENCE_PRESET_DAYS.week) {
+    return 'week';
+  }
+  if (recurrenceDays === RECURRENCE_PRESET_DAYS.month) {
+    return 'month';
+  }
+  return 'custom';
+}
+
 function formatReminderDate(dateOnly: string): string {
   return parseLocalDate(dateOnly).toLocaleDateString(undefined, {
     month: 'short',
@@ -11,11 +28,24 @@ function formatReminderDate(dateOnly: string): string {
   });
 }
 
+function formatRecurrence(recurrenceDays: number | null): string {
+  switch (recurrenceModeFor(recurrenceDays)) {
+    case 'once':
+      return '';
+    case 'week':
+      return ' · weekly';
+    case 'month':
+      return ' · monthly';
+    default:
+      return ` · every ${recurrenceDays}d`;
+  }
+}
+
 export function RemindersPage() {
   const { reminders, addReminder, updateReminder, deleteReminder } = useReminders();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
-  const [repeats, setRepeats] = useState(false);
+  const [recurrenceMode, setRecurrenceMode] = useState<RecurrenceMode>('once');
   const [recurrenceDays, setRecurrenceDays] = useState('3');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +56,9 @@ export function RemindersPage() {
     setEditingId(reminder.id);
     setTitle(reminder.title);
     setDate(reminder.date);
-    setRepeats(reminder.recurrenceDays !== null);
-    setRecurrenceDays(reminder.recurrenceDays === null ? '3' : String(reminder.recurrenceDays));
+    const mode = recurrenceModeFor(reminder.recurrenceDays);
+    setRecurrenceMode(mode);
+    setRecurrenceDays(mode === 'custom' ? String(reminder.recurrenceDays) : '3');
     setError(null);
   }
 
@@ -35,14 +66,19 @@ export function RemindersPage() {
     setEditingId(null);
     setTitle('');
     setDate('');
-    setRepeats(false);
+    setRecurrenceMode('once');
     setRecurrenceDays('3');
     setError(null);
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const parsedRecurrence = repeats ? Number(recurrenceDays) : null;
+    const parsedRecurrence =
+      recurrenceMode === 'once'
+        ? null
+        : recurrenceMode === 'custom'
+          ? Number(recurrenceDays)
+          : RECURRENCE_PRESET_DAYS[recurrenceMode];
     try {
       const input = { title, date, recurrenceDays: parsedRecurrence };
       if (editingId) {
@@ -77,7 +113,7 @@ export function RemindersPage() {
               <span className="row-text">{reminder.title}</span>
               <span className="row-text-muted">
                 {formatReminderDate(reminder.date)}
-                {reminder.recurrenceDays !== null ? ` · every ${reminder.recurrenceDays}d` : ''}
+                {formatRecurrence(reminder.recurrenceDays)}
               </span>
             </div>
             <div className="row-actions">
@@ -114,16 +150,21 @@ export function RemindersPage() {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
-        <label className="switch-row" style={{ marginTop: 16 }}>
-          <span>Repeat this reminder</span>
-          <input
-            type="checkbox"
-            checked={repeats}
-            onChange={(e) => setRepeats(e.target.checked)}
-          />
-        </label>
+        <p className="field-label">Repeat</p>
+        <select
+          className="select-pill"
+          style={{ width: '100%' }}
+          aria-label="Repeat"
+          value={recurrenceMode}
+          onChange={(e) => setRecurrenceMode(e.target.value as RecurrenceMode)}
+        >
+          <option value="once">One-off</option>
+          <option value="week">Every week</option>
+          <option value="month">Every month</option>
+          <option value="custom">Custom (days)</option>
+        </select>
 
-        {repeats && (
+        {recurrenceMode === 'custom' && (
           <>
             <p className="field-label">Repeat every N days</p>
             <input

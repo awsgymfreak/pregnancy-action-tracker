@@ -15,7 +15,8 @@ export function RemindersPage() {
   const { reminders, addReminder, updateReminder, deleteReminder } = useReminders();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
-  const [recurrenceDays, setRecurrenceDays] = useState('');
+  const [repeats, setRepeats] = useState(false);
+  const [recurrenceDays, setRecurrenceDays] = useState('3');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,8 @@ export function RemindersPage() {
     setEditingId(reminder.id);
     setTitle(reminder.title);
     setDate(reminder.date);
-    setRecurrenceDays(reminder.recurrenceDays === null ? '' : String(reminder.recurrenceDays));
+    setRepeats(reminder.recurrenceDays !== null);
+    setRecurrenceDays(reminder.recurrenceDays === null ? '3' : String(reminder.recurrenceDays));
     setError(null);
   }
 
@@ -33,14 +35,14 @@ export function RemindersPage() {
     setEditingId(null);
     setTitle('');
     setDate('');
-    setRecurrenceDays('');
+    setRepeats(false);
+    setRecurrenceDays('3');
     setError(null);
   }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const trimmedRecurrence = recurrenceDays.trim();
-    const parsedRecurrence = trimmedRecurrence === '' ? null : Number(trimmedRecurrence);
+    const parsedRecurrence = repeats ? Number(recurrenceDays) : null;
     try {
       const input = { title, date, recurrenceDays: parsedRecurrence };
       if (editingId) {
@@ -112,15 +114,27 @@ export function RemindersPage() {
           value={date}
           onChange={(e) => setDate(e.target.value)}
         />
-        <p className="field-label">Repeat every N days (optional)</p>
-        <input
-          className="text-input"
-          type="number"
-          min="1"
-          placeholder="Leave blank for one-off"
-          value={recurrenceDays}
-          onChange={(e) => setRecurrenceDays(e.target.value)}
-        />
+        <label className="switch-row" style={{ marginTop: 16 }}>
+          <span>Repeat this reminder</span>
+          <input
+            type="checkbox"
+            checked={repeats}
+            onChange={(e) => setRepeats(e.target.checked)}
+          />
+        </label>
+
+        {repeats && (
+          <>
+            <p className="field-label">Repeat every N days</p>
+            <input
+              className="text-input"
+              type="number"
+              min="1"
+              value={recurrenceDays}
+              onChange={(e) => setRecurrenceDays(e.target.value)}
+            />
+          </>
+        )}
         {error && <p className="error-text">{error}</p>}
         <button type="submit" className="primary-button">
           {editingId ? 'Save Changes' : 'Add Reminder'}

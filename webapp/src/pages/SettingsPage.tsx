@@ -5,7 +5,7 @@ import { useEvents } from '../context/EventsContext';
 import { buildExportPayload, downloadExportFile } from '../backup/exportData';
 import { downloadNotesExportFile } from '../backup/exportNotes';
 import { readFileAsJson, validateImportPayload } from '../backup/importData';
-import { parseNotesText, type ParseNotesResult } from '../backup/importNotes';
+import { parseNotesText, readFileAsText, type ParseNotesResult } from '../backup/importNotes';
 
 function formatPreviewTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -18,6 +18,7 @@ export function SettingsPage() {
   const { events, addEvents, replaceAll: replaceEvents } = useEvents();
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const notesFileInputRef = useRef<HTMLInputElement>(null);
 
   const [notesText, setNotesText] = useState('');
   const [notesPreview, setNotesPreview] = useState<ParseNotesResult | null>(null);
@@ -112,6 +113,31 @@ export function SettingsPage() {
     fileInputRef.current?.click();
   }
 
+  function handleNotesFileClick() {
+    notesFileInputRef.current?.click();
+  }
+
+  async function handleNotesFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) {
+      return;
+    }
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      setError('Please choose a .txt file.');
+      return;
+    }
+    try {
+      const text = await readFileAsText(file);
+      setError(null);
+      setNotesText(text);
+      setNotesImportedCount(null);
+      setNotesPreview(parseNotesText(text, actionTypes));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not read notes file.');
+    }
+  }
+
   async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -166,7 +192,7 @@ export function SettingsPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/json"
+          accept=".json,application/json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />
@@ -202,6 +228,16 @@ export function SettingsPage() {
         <button className="primary-button" onClick={handlePreviewNotes} disabled={!notesText.trim()}>
           Preview
         </button>
+        <button className="primary-button" onClick={handleNotesFileClick}>
+          Import from file
+        </button>
+        <input
+          ref={notesFileInputRef}
+          type="file"
+          accept=".txt,text/plain"
+          style={{ display: 'none' }}
+          onChange={handleNotesFileChange}
+        />
 
         {notesImportedCount !== null && (
           <p className="week-header-muted">Imported {notesImportedCount} event(s).</p>

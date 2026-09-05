@@ -57,7 +57,9 @@ export function DashboardPage() {
     <div>
       <div className="card">
         {currentWeek !== null ? (
-          <p className="week-header">Week {currentWeek}</p>
+          <p className="week-header">
+            Week {currentWeek.week}, Day {currentWeek.day}
+          </p>
         ) : (
           <p className="week-header-muted">Set a due date in Settings to see your week</p>
         )}

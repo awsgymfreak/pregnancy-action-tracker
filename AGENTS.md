@@ -1,6 +1,6 @@
-# Expo HAS CHANGED
+# This repo is the webapp
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+`webapp/` (React + Vite, deployed to GitHub Pages) is the only product in this repo. There is no native/Expo app anymore.
 
 # Protect user data in local storage
 

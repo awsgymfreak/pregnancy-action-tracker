@@ -203,31 +203,47 @@ export function SettingsPage() {
           }}
         />
 
-        <p className="field-label">Nudge me if I haven't logged anything in N days</p>
-        <input
-          className="text-input"
-          type="number"
-          min="1"
-          placeholder="Off"
-          disabled={!settings}
-          value={settings?.inactivityThresholdDays ?? ''}
-          onChange={async (e) => {
-            const raw = e.target.value;
-            try {
-              if (raw.trim() === '') {
-                await updateReminderSettings({ inactivityThresholdDays: undefined });
-                return;
+        <label className="switch-row" style={{ marginTop: 16 }}>
+          <span>Nudge me if I haven't logged anything in a while</span>
+          <input
+            type="checkbox"
+            checked={settings?.inactivityThresholdDays !== undefined}
+            disabled={!settings}
+            onChange={async (e) => {
+              try {
+                await updateReminderSettings({
+                  inactivityThresholdDays: e.target.checked ? 3 : undefined,
+                });
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Could not save.');
               }
-              const value = Number(raw);
-              if (Number.isNaN(value) || value < 1) {
-                return;
-              }
-              await updateReminderSettings({ inactivityThresholdDays: value });
-            } catch (err) {
-              setError(err instanceof Error ? err.message : 'Could not save.');
-            }
-          }}
-        />
+            }}
+          />
+        </label>
+
+        {settings?.inactivityThresholdDays !== undefined && (
+          <>
+            <p className="field-label">Days without an event before nudging</p>
+            <input
+              className="text-input"
+              type="number"
+              min="1"
+              disabled={!settings}
+              value={settings.inactivityThresholdDays}
+              onChange={async (e) => {
+                const value = Number(e.target.value);
+                if (Number.isNaN(value) || value < 1) {
+                  return;
+                }
+                try {
+                  await updateReminderSettings({ inactivityThresholdDays: value });
+                } catch (err) {
+                  setError(err instanceof Error ? err.message : 'Could not save.');
+                }
+              }}
+            />
+          </>
+        )}
 
         {error && <p className="error-text">{error}</p>}
 

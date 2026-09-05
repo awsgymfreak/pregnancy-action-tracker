@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react';
 import { useActionTypes } from '../context/ActionTypesContext';
+import { useEvents } from '../context/EventsContext';
 
 export function ActionsPage() {
   const { actionTypes, addActionType, updateActionType, deleteActionType } = useActionTypes();
+  const { events } = useEvents();
   const [name, setName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,14 @@ export function ActionsPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Delete this action type? This does not delete already-logged events.')) {
+    const eventCount = events.filter((evt) => evt.actionTypeId === id).length;
+    if (eventCount > 0) {
+      setError(
+        `${eventCount} event(s) use this action — reassign or delete them first before deleting this action.`
+      );
+      return;
+    }
+    if (!window.confirm('Delete this action type?')) {
       return;
     }
     try {

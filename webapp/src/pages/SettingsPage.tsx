@@ -3,6 +3,7 @@ import { useSettings } from '../context/SettingsContext';
 import { useActionTypes } from '../context/ActionTypesContext';
 import { useEvents } from '../context/EventsContext';
 import { buildExportPayload, downloadExportFile } from '../backup/exportData';
+import { downloadNotesExportFile } from '../backup/exportNotes';
 import { readFileAsJson, validateImportPayload } from '../backup/importData';
 import { parseNotesText, type ParseNotesResult } from '../backup/importNotes';
 
@@ -98,6 +99,15 @@ export function SettingsPage() {
     }
   }
 
+  function handleExportNotes() {
+    setError(null);
+    try {
+      downloadNotesExportFile(actionTypes, events);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not export notes.');
+    }
+  }
+
   function handleImportClick() {
     fileInputRef.current?.click();
   }
@@ -146,6 +156,9 @@ export function SettingsPage() {
 
         <button className="primary-button" onClick={handleExport}>
           Export Data
+        </button>
+        <button className="primary-button" onClick={handleExportNotes}>
+          Export as Notes
         </button>
         <button className="primary-button" onClick={handleImportClick}>
           Import Data

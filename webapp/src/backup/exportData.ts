@@ -8,15 +8,18 @@ export function buildExportPayload(
   return { actionTypes, events, settings };
 }
 
-export function downloadExportFile(payload: ExportPayload): void {
-  const json = JSON.stringify(payload, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
+export function downloadTextFile(filename: string, content: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = 'pregnancy-tracker-backup.json';
+  link.download = filename;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export function downloadExportFile(payload: ExportPayload): void {
+  downloadTextFile('pregnancy-tracker-backup.json', JSON.stringify(payload, null, 2), 'application/json');
 }

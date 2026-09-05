@@ -11,6 +11,7 @@ import {
 } from '../utils/historyFilter';
 import { groupEventsByDay } from '../utils/groupByDay';
 import { assignColors } from '../utils/colors';
+import { ActionTypeFilterSelect } from '../components/ActionTypeFilterSelect';
 
 const RANGES: HistoryRange[] = ['day', 'week', 'all'];
 
@@ -67,19 +68,11 @@ export function HistoryPage() {
               </option>
             ))}
           </select>
-          <select
-            className="select-pill"
-            aria-label="Filter by action"
-            value={actionTypeFilter ?? 'all'}
-            onChange={(e) => setActionTypeFilter(e.target.value === 'all' ? null : e.target.value)}
-          >
-            <option value="all">All actions</option>
-            {actionTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>
+          <ActionTypeFilterSelect
+            actionTypes={actionTypes}
+            selected={actionTypeFilter}
+            onChange={setActionTypeFilter}
+          />
         </div>
       </div>
 

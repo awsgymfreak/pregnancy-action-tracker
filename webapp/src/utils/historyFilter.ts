@@ -19,12 +19,12 @@ export function filterEventsByRange(
 
 export function filterEventsByActionType(
   events: ActionEvent[],
-  actionTypeId: string | null
+  actionTypeIds: string[]
 ): ActionEvent[] {
-  if (actionTypeId === null) {
+  if (actionTypeIds.length === 0) {
     return events;
   }
-  return events.filter((evt) => evt.actionTypeId === actionTypeId);
+  return events.filter((evt) => actionTypeIds.includes(evt.actionTypeId));
 }
 
 export function sortEventsMostRecentFirst(events: ActionEvent[]): ActionEvent[] {

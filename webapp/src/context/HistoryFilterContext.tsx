@@ -4,15 +4,15 @@ import type { HistoryRange } from '../utils/historyFilter';
 interface HistoryFilterContextValue {
   range: HistoryRange;
   setRange: (range: HistoryRange) => void;
-  actionTypeFilter: string | null;
-  setActionTypeFilter: (actionTypeId: string | null) => void;
+  actionTypeFilter: string[];
+  setActionTypeFilter: (actionTypeIds: string[]) => void;
 }
 
 const HistoryFilterContext = createContext<HistoryFilterContextValue | undefined>(undefined);
 
 export function HistoryFilterProvider({ children }: { children: ReactNode }) {
   const [range, setRange] = useState<HistoryRange>('day');
-  const [actionTypeFilter, setActionTypeFilter] = useState<string | null>(null);
+  const [actionTypeFilter, setActionTypeFilter] = useState<string[]>([]);
 
   return (
     <HistoryFilterContext.Provider value={{ range, setRange, actionTypeFilter, setActionTypeFilter }}>

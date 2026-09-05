@@ -1,6 +1,6 @@
 import type { ActionEvent, ActionType } from '../models/types';
 
-export type DashboardRange = 'day' | 'month' | 'pregnancy';
+export type DashboardRange = 'day' | 'week' | 'month' | 'pregnancy';
 
 export interface BucketCount {
   label: string;
@@ -41,6 +41,26 @@ function bucketByHour(events: ActionEvent[], referenceDate: Date): BucketCount[]
     const start = new Date(evt.startDate);
     if (start >= dayStart && start < dayEnd) {
       addToBucket(buckets[start.getHours()], evt.actionTypeId);
+    }
+  });
+
+  return buckets;
+}
+
+function bucketByLast7Days(events: ActionEvent[], referenceDate: Date): BucketCount[] {
+  const todayStart = startOfDay(referenceDate);
+  const windowStart = new Date(todayStart.getTime() - 6 * MS_PER_DAY);
+  const windowEnd = new Date(todayStart.getTime() + MS_PER_DAY);
+  const buckets: BucketCount[] = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(windowStart.getTime() + i * MS_PER_DAY);
+    return { label: day.toLocaleDateString(undefined, { weekday: 'short' }), countsByActionType: {} };
+  });
+
+  events.forEach((evt) => {
+    const start = new Date(evt.startDate);
+    if (start >= windowStart && start < windowEnd) {
+      const dayIndex = Math.floor((startOfDay(start).getTime() - windowStart.getTime()) / MS_PER_DAY);
+      addToBucket(buckets[dayIndex], evt.actionTypeId);
     }
   });
 
@@ -99,6 +119,9 @@ export function bucketEvents(
 ): BucketCount[] {
   if (range === 'day') {
     return bucketByHour(events, referenceDate);
+  }
+  if (range === 'week') {
+    return bucketByLast7Days(events, referenceDate);
   }
   if (range === 'month') {
     return bucketByDay(events, referenceDate);

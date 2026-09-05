@@ -8,18 +8,13 @@ import { assignColors } from '../utils/colors';
 import { getCurrentPregnancyWeek } from '../utils/pregnancyWeek';
 import { filterEventsByActionType } from '../utils/historyFilter';
 
-const RANGES: DashboardRange[] = ['day', 'month', 'pregnancy'];
+const RANGES: DashboardRange[] = ['day', 'week', 'month', 'pregnancy'];
 
 const RANGE_LABELS: Record<DashboardRange, string> = {
   day: 'Today (by hour)',
+  week: 'Last 7 days',
   month: 'This month (by day)',
   pregnancy: 'Whole pregnancy (by week)',
-};
-
-const BAR_WIDTH_PX: Record<DashboardRange, number> = {
-  day: 20,
-  month: 16,
-  pregnancy: 14,
 };
 
 export function DashboardPage() {
@@ -51,7 +46,6 @@ export function DashboardPage() {
 
   const currentWeek = settings ? getCurrentPregnancyWeek(settings.dueDate) : null;
   const canShowChart = range !== 'pregnancy' || Boolean(settings);
-  const chartMinWidth = Math.max(chartRows.length * BAR_WIDTH_PX[range], 320);
 
   return (
     <div>
@@ -99,26 +93,25 @@ export function DashboardPage() {
         </div>
       ) : (
         <div className="card">
-          <div className="chart-scroll">
-            <div style={{ minWidth: chartMinWidth, height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartRows}>
-                  <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-                  <YAxis allowDecimals={false} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 13 }} />
-                  {filteredTypes.map((type) => (
-                    <Bar
-                      key={type.id}
-                      dataKey={type.id}
-                      name={type.name}
-                      stackId="stack"
-                      fill={colors[type.id]}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartRows}>
+                <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                <YAxis allowDecimals={false} />
+                <Tooltip cursor={false} />
+                <Legend wrapperStyle={{ fontSize: 13 }} />
+                {filteredTypes.map((type) => (
+                  <Bar
+                    key={type.id}
+                    dataKey={type.id}
+                    name={type.name}
+                    stackId="stack"
+                    fill={colors[type.id]}
+                    activeBar={false}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

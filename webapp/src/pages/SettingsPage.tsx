@@ -311,6 +311,10 @@ export function SettingsPage() {
           <p className="week-header-muted">No events found in the pasted text.</p>
         )}
       </div>
+
+      <p className="week-header-muted" style={{ textAlign: 'center' }}>
+        {import.meta.env.VITE_APP_VERSION ?? 'dev'}
+      </p>
     </div>
   );
 }

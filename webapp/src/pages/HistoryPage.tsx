@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActionTypes } from '../context/ActionTypesContext';
 import { useEvents } from '../context/EventsContext';
@@ -41,6 +41,16 @@ export function HistoryPage() {
 
   const dayGroups = useMemo(() => groupEventsByDay(visibleEvents), [visibleEvents]);
 
+  const [openOverrides, setOpenOverrides] = useState<Record<string, boolean>>({});
+
+  function isDayOpen(label: string): boolean {
+    return openOverrides[label] ?? label === 'Today';
+  }
+
+  function toggleDay(label: string) {
+    setOpenOverrides((prev) => ({ ...prev, [label]: !isDayOpen(label) }));
+  }
+
   return (
     <div>
       <div className="card">
@@ -77,42 +87,71 @@ export function HistoryPage() {
         <p className="week-header-muted">No events logged for this range.</p>
       )}
 
-      {dayGroups.map((group) => (
-        <div className="day-group" key={`${group.label}-${group.events[0].id}`}>
-          <p className="day-group-header">{group.label}</p>
-          {group.events.map((item) => {
-            const type = actionTypeById.get(item.actionTypeId);
-            const start = new Date(item.startDate);
-            const timeLabel = item.endDate
-              ? `${formatTime(start)} – ${formatTime(new Date(item.endDate))}`
-              : formatTime(start);
-            return (
-              <div
-                key={item.id}
-                className="event-card"
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/log-event/${item.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    navigate(`/log-event/${item.id}`);
-                  }
-                }}
+      {dayGroups.map((group) => {
+        const open = isDayOpen(group.label);
+        return (
+          <div className="day-group" key={`${group.label}-${group.events[0].id}`}>
+            <div
+              className="day-group-header"
+              role="button"
+              tabIndex={0}
+              aria-expanded={open}
+              onClick={() => toggleDay(group.label)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleDay(group.label);
+                }
+              }}
+            >
+              <span>{group.label}</span>
+              <svg
+                className={open ? 'day-group-chevron day-group-chevron-open' : 'day-group-chevron'}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <span
-                  className="event-accent"
-                  style={{ backgroundColor: colors[item.actionTypeId] ?? '#9CA3AF' }}
-                />
-                <div className="event-body">
-                  <span className="event-name">{type?.name ?? 'Unknown'}</span>
-                  <span className="event-time">{timeLabel}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ))}
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </div>
+            {open &&
+              group.events.map((item) => {
+                const type = actionTypeById.get(item.actionTypeId);
+                const start = new Date(item.startDate);
+                const timeLabel = item.endDate
+                  ? `${formatTime(start)} – ${formatTime(new Date(item.endDate))}`
+                  : formatTime(start);
+                return (
+                  <div
+                    key={item.id}
+                    className="event-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`/log-event/${item.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/log-event/${item.id}`);
+                      }
+                    }}
+                  >
+                    <span
+                      className="event-accent"
+                      style={{ backgroundColor: colors[item.actionTypeId] ?? '#9CA3AF' }}
+                    />
+                    <div className="event-body">
+                      <span className="event-name">{type?.name ?? 'Unknown'}</span>
+                      <span className="event-time">{timeLabel}</span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        );
+      })}
 
       <button className="fab" onClick={() => navigate('/log-event')} aria-label="Log new event">
         +

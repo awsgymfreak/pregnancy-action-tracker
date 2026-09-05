@@ -96,9 +96,9 @@ export function DashboardPage() {
         <div className="card">
           <div style={{ height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartRows} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+              <BarChart data={chartRows} margin={{ top: 4, right: 8, left: -8, bottom: 0 }}>
                 <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                <YAxis allowDecimals={false} width={30} tick={{ fontSize: 10 }} />
+                <YAxis allowDecimals={false} width={28} tick={{ fontSize: 10 }} />
                 <Tooltip cursor={false} />
                 {filteredTypes.map((type) => (
                   <Bar

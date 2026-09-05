@@ -277,6 +277,11 @@ body {
   font-size: 15px;
 }
 
+.row-text-muted {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
 .row-actions {
   display: flex;
   gap: 16px;

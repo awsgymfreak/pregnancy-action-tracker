@@ -2,11 +2,14 @@ name: Deploy webapp to GitHub Pages
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'webapp/**'
-      - '.github/workflows/deploy-webapp.yml'
-  workflow_dispatch: {}
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Tag, branch, or SHA to deploy (e.g. v1.1.0 to roll back)'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -22,6 +25,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -45,3 +50,15 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  release:
+    needs: deploy
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: gh release create "${{ github.ref_name }}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

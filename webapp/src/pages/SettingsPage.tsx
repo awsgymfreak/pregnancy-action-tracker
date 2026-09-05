@@ -6,6 +6,7 @@ import { buildExportPayload, downloadExportFile } from '../backup/exportData';
 import { downloadNotesExportFile } from '../backup/exportNotes';
 import { readFileAsJson, validateImportPayload } from '../backup/importData';
 import { parseNotesText, readFileAsText, type ParseNotesResult } from '../backup/importNotes';
+import { formatLocalDate, parseLocalDate } from '../utils/reminders';
 
 function formatPreviewTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -167,11 +168,11 @@ export function SettingsPage() {
         <input
           className="text-input"
           type="date"
-          value={settings ? settings.dueDate.slice(0, 10) : ''}
+          value={settings ? formatLocalDate(new Date(settings.dueDate)) : ''}
           onChange={async (e) => {
             if (!e.target.value) return;
             try {
-              await updateDueDate(new Date(e.target.value).toISOString());
+              await updateDueDate(parseLocalDate(e.target.value).toISOString());
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Could not save.');
             }

@@ -12,7 +12,7 @@ function formatPreviewTime(iso: string): string {
 }
 
 export function SettingsPage() {
-  const { settings, updateDueDate, replaceAll: replaceSettings } = useSettings();
+  const { settings, updateDueDate, updateReminderSettings, replaceAll: replaceSettings } = useSettings();
   const { actionTypes, addActionType, addActionTypes, replaceAll: replaceActionTypes } =
     useActionTypes();
   const { events, addEvents, replaceAll: replaceEvents } = useEvents();
@@ -172,6 +172,52 @@ export function SettingsPage() {
             if (!e.target.value) return;
             try {
               await updateDueDate(new Date(e.target.value).toISOString());
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Could not save.');
+            }
+          }}
+        />
+
+        <p className="field-label">Remind me N days before a reminder is due</p>
+        <input
+          className="text-input"
+          type="number"
+          min="0"
+          disabled={!settings}
+          value={settings?.reminderLeadTimeDays ?? 3}
+          onChange={async (e) => {
+            const value = Number(e.target.value);
+            if (Number.isNaN(value) || value < 0) {
+              return;
+            }
+            try {
+              await updateReminderSettings({ reminderLeadTimeDays: value });
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Could not save.');
+            }
+          }}
+        />
+
+        <p className="field-label">Nudge me if I haven't logged anything in N days</p>
+        <input
+          className="text-input"
+          type="number"
+          min="1"
+          placeholder="Off"
+          disabled={!settings}
+          value={settings?.inactivityThresholdDays ?? ''}
+          onChange={async (e) => {
+            const raw = e.target.value;
+            try {
+              if (raw.trim() === '') {
+                await updateReminderSettings({ inactivityThresholdDays: undefined });
+                return;
+              }
+              const value = Number(raw);
+              if (Number.isNaN(value) || value < 1) {
+                return;
+              }
+              await updateReminderSettings({ inactivityThresholdDays: value });
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Could not save.');
             }

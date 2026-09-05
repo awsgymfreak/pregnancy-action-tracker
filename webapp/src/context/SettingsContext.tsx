@@ -8,6 +8,10 @@ const STORAGE_KEY = 'pregnancy-tracker:settings';
 interface SettingsContextValue {
   settings: Settings | null;
   updateDueDate: (dueDate: string) => Promise<void>;
+  updateReminderSettings: (updates: {
+    reminderLeadTimeDays?: number;
+    inactivityThresholdDays?: number;
+  }) => Promise<void>;
   replaceAll: (settings: Settings) => Promise<void>;
 }
 
@@ -33,7 +37,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   async function updateDueDate(dueDate: string) {
     validateDueDate(dueDate);
-    await persist({ dueDate });
+    await persist({ ...settings, dueDate });
+  }
+
+  async function updateReminderSettings(updates: {
+    reminderLeadTimeDays?: number;
+    inactivityThresholdDays?: number;
+  }) {
+    if (!settings) {
+      throw new Error('Set a due date first.');
+    }
+    await persist({ ...settings, ...updates });
   }
 
   async function replaceAll(next: Settings) {
@@ -42,7 +56,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SettingsContext.Provider value={{ settings, updateDueDate, replaceAll }}>
+    <SettingsContext.Provider value={{ settings, updateDueDate, updateReminderSettings, replaceAll }}>
       {children}
     </SettingsContext.Provider>
   );

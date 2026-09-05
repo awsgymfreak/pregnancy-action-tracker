@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReminders } from '../context/RemindersContext';
 import { useEvents } from '../context/EventsContext';
 import { useSettings } from '../context/SettingsContext';
+import { readJson, writeJson } from '../storage/localStorage';
 import {
   isReminderDue,
   dismissReminder,
@@ -17,7 +18,7 @@ import type { Reminder } from '../models/types';
 const INACTIVITY_DISMISS_KEY = 'pregnancy-tracker:inactivity-dismissed-until';
 
 function readInactivityDismissedUntil(): string | null {
-  return window.localStorage.getItem(INACTIVITY_DISMISS_KEY);
+  return readJson<string>(INACTIVITY_DISMISS_KEY);
 }
 
 export function ReminderBanner() {
@@ -28,6 +29,7 @@ export function ReminderBanner() {
   const [inactivityDismissedUntil, setInactivityDismissedUntil] = useState<string | null>(
     readInactivityDismissedUntil
   );
+  const [error, setError] = useState<string | null>(null);
 
   const today = new Date();
   const leadTimeDays = settings?.reminderLeadTimeDays ?? 3;
@@ -52,23 +54,35 @@ export function ReminderBanner() {
     today
   );
 
-  function handleDismiss(reminder: Reminder) {
-    updateReminder(reminder.id, dismissReminder(reminder, today));
+  async function handleDismiss(reminder: Reminder) {
+    try {
+      await updateReminder(reminder.id, dismissReminder(reminder, today));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not dismiss reminder.');
+    }
   }
 
-  function handleComplete(reminder: Reminder) {
-    const next = completeReminder(reminder, today);
-    if (next === null) {
-      deleteReminder(reminder.id);
-    } else {
-      updateReminder(reminder.id, next);
+  async function handleComplete(reminder: Reminder) {
+    try {
+      const next = completeReminder(reminder, today);
+      if (next === null) {
+        await deleteReminder(reminder.id);
+      } else {
+        await updateReminder(reminder.id, next);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not complete reminder.');
     }
   }
 
   function handleDismissInactivity() {
     const tomorrow = addDaysToDateOnly(formatLocalDate(today), 1);
-    window.localStorage.setItem(INACTIVITY_DISMISS_KEY, tomorrow);
-    setInactivityDismissedUntil(tomorrow);
+    try {
+      writeJson(INACTIVITY_DISMISS_KEY, tomorrow);
+      setInactivityDismissedUntil(tomorrow);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not save.');
+    }
   }
 
   if (dueReminders.length === 0 && !inactivityDue) {
@@ -101,6 +115,7 @@ export function ReminderBanner() {
                 e.stopPropagation();
                 handleComplete(reminder);
               }}
+              onKeyDown={(e) => e.stopPropagation()}
             >
               ✔️
             </button>
@@ -112,6 +127,7 @@ export function ReminderBanner() {
                 e.stopPropagation();
                 handleDismiss(reminder);
               }}
+              onKeyDown={(e) => e.stopPropagation()}
             >
               ✕
             </button>
@@ -135,6 +151,7 @@ export function ReminderBanner() {
           </div>
         </div>
       )}
+      {error && <p className="error-text">{error}</p>}
     </div>
   );
 }

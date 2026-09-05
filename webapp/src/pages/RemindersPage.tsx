@@ -1,11 +1,10 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useReminders } from '../context/RemindersContext';
-import { sortRemindersByDate } from '../utils/reminders';
+import { parseLocalDate, sortRemindersByDate } from '../utils/reminders';
 import type { Reminder } from '../models/types';
 
 function formatReminderDate(dateOnly: string): string {
-  const [year, month, day] = dateOnly.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+  return parseLocalDate(dateOnly).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

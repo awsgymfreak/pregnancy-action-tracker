@@ -24,8 +24,7 @@ export function addDaysToDateOnly(dateOnly: string, days: number): string {
 }
 
 export function isReminderDue(reminder: Reminder, today: Date, leadTimeDays: number): boolean {
-  const dueDay = parseLocalDate(reminder.date);
-  const dueThreshold = new Date(dueDay.getTime() - leadTimeDays * MS_PER_DAY);
+  const dueThreshold = parseLocalDate(addDaysToDateOnly(reminder.date, -leadTimeDays));
   const todayStart = startOfDay(today);
   if (todayStart < dueThreshold) {
     return false;

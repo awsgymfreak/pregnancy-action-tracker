@@ -186,11 +186,16 @@ export function SettingsPage() {
           disabled={!settings}
           value={settings?.reminderLeadTimeDays ?? 3}
           onChange={async (e) => {
-            const value = Number(e.target.value);
-            if (Number.isNaN(value) || value < 0) {
-              return;
-            }
+            const raw = e.target.value;
             try {
+              if (raw.trim() === '') {
+                await updateReminderSettings({ reminderLeadTimeDays: undefined });
+                return;
+              }
+              const value = Number(raw);
+              if (Number.isNaN(value) || value < 0) {
+                return;
+              }
               await updateReminderSettings({ reminderLeadTimeDays: value });
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Could not save.');

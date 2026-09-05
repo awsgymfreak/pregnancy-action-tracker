@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useActionTypes } from '../context/ActionTypesContext';
 import { useEvents } from '../context/EventsContext';
 import { useSettings } from '../context/SettingsContext';
@@ -98,12 +98,13 @@ export function DashboardPage() {
       ) : (
         <div className="card">
           <div className="chart-scroll">
-            <div style={{ minWidth: chartMinWidth, height: 260 }}>
+            <div style={{ minWidth: chartMinWidth, height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartRows}>
                   <XAxis dataKey="label" tick={{ fontSize: 10 }} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 13 }} />
                   {filteredTypes.map((type) => (
                     <Bar
                       key={type.id}
@@ -119,17 +120,6 @@ export function DashboardPage() {
           </div>
         </div>
       )}
-
-      <div className="card">
-        <div className="legend">
-          {actionTypes.map((type) => (
-            <div key={type.id} className="legend-row">
-              <span className="color-dot" style={{ backgroundColor: colors[type.id] }} />
-              <span>{type.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

@@ -9,21 +9,20 @@ export interface BucketCount {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-// All bucketing is done in UTC. ActionEvent.startDate/endDate and reference
-// dates are ISO 8601 UTC strings ("Z" suffix); using local-time Date methods
-// (getHours/getDate/etc.) here would shift bucket boundaries by the host
-// machine's timezone offset and make "day"/"hour" assignment nondeterministic
-// across environments. UTC accessors keep bucketing identical everywhere.
+// Day/hour bucketing uses the viewer's local time, not UTC: this dashboard
+// shows "today" and "this month" for the person looking at it, so an event
+// logged at 11pm local should land in today's bucket (and that hour),
+// regardless of what UTC date/hour it converts to.
 function startOfDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 function startOfMonth(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
 function daysInMonth(date: Date): number {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 }
 
 function addToBucket(bucket: BucketCount, actionTypeId: string) {
@@ -41,7 +40,7 @@ function bucketByHour(events: ActionEvent[], referenceDate: Date): BucketCount[]
   events.forEach((evt) => {
     const start = new Date(evt.startDate);
     if (start >= dayStart && start < dayEnd) {
-      addToBucket(buckets[start.getUTCHours()], evt.actionTypeId);
+      addToBucket(buckets[start.getHours()], evt.actionTypeId);
     }
   });
 
@@ -59,10 +58,10 @@ function bucketByDay(events: ActionEvent[], referenceDate: Date): BucketCount[] 
   events.forEach((evt) => {
     const start = new Date(evt.startDate);
     if (
-      start.getUTCFullYear() === monthStart.getUTCFullYear() &&
-      start.getUTCMonth() === monthStart.getUTCMonth()
+      start.getFullYear() === monthStart.getFullYear() &&
+      start.getMonth() === monthStart.getMonth()
     ) {
-      addToBucket(buckets[start.getUTCDate() - 1], evt.actionTypeId);
+      addToBucket(buckets[start.getDate() - 1], evt.actionTypeId);
     }
   });
 

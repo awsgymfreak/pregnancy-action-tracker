@@ -11,7 +11,7 @@ interface HistoryFilterContextValue {
 const HistoryFilterContext = createContext<HistoryFilterContextValue | undefined>(undefined);
 
 export function HistoryFilterProvider({ children }: { children: ReactNode }) {
-  const [range, setRange] = useState<HistoryRange>('day');
+  const [range, setRange] = useState<HistoryRange>('week');
   const [actionTypeFilter, setActionTypeFilter] = useState<string[]>([]);
 
   return (

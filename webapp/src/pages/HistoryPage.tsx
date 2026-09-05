@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useActionTypes } from '../context/ActionTypesContext';
 import { useEvents } from '../context/EventsContext';
+import { useHistoryFilter } from '../context/HistoryFilterContext';
 import {
   filterEventsByRange,
   filterEventsByActionType,
@@ -27,8 +28,7 @@ export function HistoryPage() {
   const { actionTypes } = useActionTypes();
   const { events } = useEvents();
   const navigate = useNavigate();
-  const [range, setRange] = useState<HistoryRange>('day');
-  const [actionTypeFilter, setActionTypeFilter] = useState<string | null>(null);
+  const { range, setRange, actionTypeFilter, setActionTypeFilter } = useHistoryFilter();
 
   const colors = useMemo(() => assignColors(actionTypes.map((t) => t.id)), [actionTypes]);
   const actionTypeById = useMemo(() => new Map(actionTypes.map((t) => [t.id, t])), [actionTypes]);

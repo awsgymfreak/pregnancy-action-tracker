@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route } from 'react-router-dom';
 import { ActionTypesProvider } from './context/ActionTypesContext';
 import { EventsProvider } from './context/EventsContext';
 import { SettingsProvider } from './context/SettingsContext';
+import { HistoryFilterProvider } from './context/HistoryFilterContext';
 import { NavBar } from './components/NavBar';
 import { DashboardPage } from './pages/DashboardPage';
 import { HistoryPage } from './pages/HistoryPage';
@@ -14,19 +15,21 @@ export default function App() {
     <SettingsProvider>
       <ActionTypesProvider>
         <EventsProvider>
-          <HashRouter>
-            <main className="page-content">
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/history" element={<HistoryPage />} />
-                <Route path="/actions" element={<ActionsPage />} />
-                <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/log-event" element={<LogEventPage />} />
-                <Route path="/log-event/:eventId" element={<LogEventPage />} />
-              </Routes>
-            </main>
-            <NavBar />
-          </HashRouter>
+          <HistoryFilterProvider>
+            <HashRouter>
+              <main className="page-content">
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/history" element={<HistoryPage />} />
+                  <Route path="/actions" element={<ActionsPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/log-event" element={<LogEventPage />} />
+                  <Route path="/log-event/:eventId" element={<LogEventPage />} />
+                </Routes>
+              </main>
+              <NavBar />
+            </HashRouter>
+          </HistoryFilterProvider>
         </EventsProvider>
       </ActionTypesProvider>
     </SettingsProvider>
